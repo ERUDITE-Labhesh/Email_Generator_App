@@ -76,4 +76,10 @@ def generate_gap_analysis(data):
 
     return data
 
+def run_full_pipeline(analysis_id): 
+    output = main_extractor(analysis_id)
+    enriched_output = generate_gap_analysis(output)
+    return enriched_output
+
+
 

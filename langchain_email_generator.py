@@ -152,12 +152,6 @@ def run_email_generation_pipeline(analysis_id):
     print(result)
     return result
 
-#if __name__ == "__main__":
-
-    # analysis_id = "4b9a6808-3aed-47cd-8d5f-ba8ee6256084"
-    # analysis_id = "17bce42d-6e0d-466b-b3f4-b7d9f02f81fe"
-    # result = run_email_generation_pipeline(analysis_id)
-    # print(json.dumps(result, indent=2))
 
 
 
