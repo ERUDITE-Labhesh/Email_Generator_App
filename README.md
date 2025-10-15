@@ -1,1 +1,0 @@
-# Email_Generator_App
