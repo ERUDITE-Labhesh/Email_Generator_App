@@ -1,0 +1,24 @@
+/* Loader */
+.spinner-border {
+  border-width: 4px;
+  border-style: solid;
+  border-color: #3b82f6 transparent transparent transparent; /* Tailwind blue-500 */
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+}
+
+/* Neumorphism shadows */
+.shadow-neumorphism {
+  box-shadow: 8px 8px 16px #d1d5db, -8px -8px 16px #ffffff;
+}
+
+.shadow-neumorphism-inner {
+  box-shadow: inset 4px 4px 8px #d1d5db, inset -4px -4px 8px #ffffff;
+}
+
+/* Glassmorphism effect */
+body {
+  background: linear-gradient(135deg, rgba(129,140,248,0.3) 0%, rgba(139,92,246,0.3) 50%, rgba(236,72,153,0.3) 100%);
+  backdrop-filter: blur(10px);
+}

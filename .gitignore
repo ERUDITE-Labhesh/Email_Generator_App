@@ -1,0 +1,16 @@
+# Python environment
+venv/
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+
+# IDE / Editor files
+.vscode/
+.DS_Store
+
+# Byte-compiled / optimized files
+*.pyo
+*.pyd
+*.pdb

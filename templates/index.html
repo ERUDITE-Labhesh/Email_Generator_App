@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Email Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="bg-gradient-to-r from-blue-100/50 via-purple-100/30 to-pink-100/50 backdrop-blur-lg min-h-screen flex items-center justify-center p-6">
+
+  <div id="input-section" class="w-full max-w-xl p-8 rounded-3xl bg-white/30 backdrop-blur-md shadow-neumorphism flex flex-col items-center">
+    <h1 class="text-3xl font-extrabold mb-6 text-gray-800">AI Email Generator</h1>
+
+    <input id="analysis-id" type="text" placeholder="Enter Analysis ID" 
+      class="w-full p-4 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 mb-6 bg-white/70 shadow-neumorphism-inner" />
+
+    <button id="generate-btn" class="w-full py-4 bg-blue-500 text-white font-semibold rounded-xl shadow-neumorphism hover:bg-blue-600 transition-colors">Generate</button>
+
+    <!-- Loader -->
+    <div id="loader" class="hidden mt-6 text-center">
+      <div class="spinner-border animate-spin mx-auto"></div>
+      <p class="text-gray-700 mt-2">Generating emails...</p>
+    </div>
+  </div>
+
+  <!-- Email Output Section -->
+  <div id="emails-section" class="w-full max-w-xl mt-6 hidden"></div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
