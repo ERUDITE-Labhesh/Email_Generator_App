@@ -77,18 +77,3 @@ def generate_gap_analysis(data):
     return data
 
 
-def run_full_pipeline(analysis_id): 
-    output = main_extractor(analysis_id)
-    enriched_output = generate_gap_analysis(output)
-    print(enriched_output)
-    return enriched_output
-
-# if __name__ == "__main__":
-#     #analysis_id = "17bce42d-6e0d-466b-b3f4-b7d9f02f81fe"
-#     # analysis_id = "0ff729f6-25ff-4c53-bbc4-1c2ec9544ac0" # Byram Healthcare
-#     # analysis_id = "4b9a6808-3aed-47cd-8d5f-ba8ee6256084" # RJ Cooper & Associates
-#     # enriched = run_full_pipeline(analysis_id)
-#     # print(json.dumps(enriched, indent=2))
-
-
-
