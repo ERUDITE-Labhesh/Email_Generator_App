@@ -4,23 +4,43 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Email Generator</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body class="bg-gradient-to-r from-blue-100/50 via-purple-100/30 to-pink-100/50 backdrop-blur-lg min-h-screen flex items-center justify-center p-6">
 
+  <!-- Top Nav -->
+  <nav class="absolute top-4 left-6">
+    <a href="/" class="insight-logo text-4xl font-extrabold tracking-wide bg-clip-text text-transparent
+       bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 drop-shadow-md hover:opacity-80 transition-opacity duration-200">
+      InsightOutreach
+    </a> 
+  </nav>
+
+  <!-- Input Section -->
   <div id="input-section" class="w-full max-w-xl p-8 rounded-3xl bg-white/30 backdrop-blur-md shadow-neumorphism flex flex-col items-center">
-    <h1 class="text-3xl font-extrabold mb-6 text-gray-800">AI Email Generator</h1>
+    <h1 class="text-3xl font-extrabold mb-6 text-gray-800" style="font-family: 'Schibsted Grotesk', sans-serif;">
+      AI Email Generator
+    </h1>
 
     <input id="analysis-id" type="text" placeholder="Enter Analysis ID" 
       class="w-full p-4 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 mb-6 bg-white/70 shadow-neumorphism-inner" />
 
-    <button id="generate-btn" class="w-full py-4 bg-blue-500 text-white font-semibold rounded-xl shadow-neumorphism hover:bg-blue-600 transition-colors">Generate</button>
+    <button id="generate-btn" class="w-full py-4 bg-blue-500 text-white font-semibold rounded-xl shadow-neumorphism hover:bg-blue-600 transition-colors">
+      Generate
+    </button>
 
-    <!-- Loader -->
-    <div id="loader" class="hidden mt-6 text-center">
-      <div class="spinner-border animate-spin mx-auto"></div>
-      <p class="text-gray-700 mt-2">Generating emails...</p>
+    <!-- Loader with dynamic status -->
+    <div id="loader" class="hidden mt-8 flex flex-col items-center">
+      <div class="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+      <p id="status-text" class="text-gray-700 mt-4 font-medium">Starting...</p>
     </div>
   </div>
 
