@@ -144,6 +144,9 @@ async def generate_gap_analysis_async(data):
             parsed = json.loads(response.content)
         except Exception as e:
             print(f"LLM call failed: {e}")
+            error_message = str(e)
+            if "Error code: 402" in error_message or "Insufficient credits" in error_message:
+                raise ValueError("INSUFFICIENT_CREDITS_ERROR")
             parsed = {
                 "ai solution": opp.get("solution"),
                 "gap_analysis": getattr(response, 'content', 'N/A').strip(),
@@ -161,7 +164,13 @@ def generate_gap_analysis(data):
     return asyncio.run(generate_gap_analysis_async(data))
 
 def run_full_pipeline(analysis_id):
-    output = main_extractor(analysis_id)
-    enriched_output = generate_gap_analysis(output)
-    print(enriched_output)
-    return enriched_output
+    try: 
+        output = main_extractor(analysis_id)
+        enriched_output = generate_gap_analysis(output)
+        print(enriched_output)
+        return enriched_output
+    except ValueError as e:
+        # Bubble up custom credit exhaustion error
+        if "INSUFFICIENT_CREDITS_ERROR" in str(e) or "Insufficient credits" in str(e):
+            raise ValueError("INSUFFICIENT_CREDITS_ERROR")
+

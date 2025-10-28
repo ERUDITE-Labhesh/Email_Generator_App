@@ -1,160 +1,3 @@
-# import os
-# import json
-# from langchain_openai import ChatOpenAI
-# from langchain.schema import SystemMessage, HumanMessage
-# from dotenv import load_dotenv
-
-# import textwrap
-
-# from langchain_gap_analyser import run_full_pipeline
-
-# load_dotenv()
-
-
-# def generate_email_and_subject(data):
-
-#     MODEL_NAME = os.getenv("OPENROUTER_MODEL", "x-ai/grok-4-fast")
-#     BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
-#     API_KEY = os.getenv("OPENROUTER_API_KEY")
-
-#     if not API_KEY:
-#         raise ValueError("OPENROUTER_API_KEY not set in environment variables")
-    
-#     llm = ChatOpenAI(
-#         model=MODEL_NAME,
-#         openai_api_base=BASE_URL,
-#         openai_api_key=API_KEY,
-#         temperature=0.4,
-#         streaming=True
-        
-#     )
-
-#     SYSTEM_PROMPT = """
-#                         You are an expert copywriter and sales strategist generating highly personalized cold emails for Consultadd, 
-#                         a custom AI solutions company for SMBs and enterprises. Your company has the USP of rapidly deploying 
-#                         tailor-made solutions for unique challenges of a company.
-
-#                         Your emails must be crafted to appeal respectfully and relevantly to individuals at specific companies, taking into account their role, department, industry, and business needs while positioning Consultadd as their ideal AI transformation partner.
-#                         While you are getting inputs to use a particular gap, follow the guidelines below while drafting the first email
-#                         Keep the email concise with a character limit of 100 words or 250 characters max. Ensures that message is impactful, making it personalised to the person and the company he is working for.
-#                         Avoid jargon and buzzwords and use simplified language.
-#                         Begin with a personalized opening referencing company news, recent activity, or an industry challenge relevant to the prospect.
-#                         After the opening, briefly address a potential gap very quickly, also touching upon a probable solution without giving away much information but generating curiosity to know further.
-#                         Whenever mentioning Consultadd, clearly communicate the brand's central value proposition: helping companies with tailor made custom AI solutions that unlock efficiency, rapidly automate what matters, and fit their specific stage in the AI journey.
-#                         Close with a clear, low-pressure CTA inviting a short meeting or a discovery call. However, it should drive curiosity. Don't make it an open ended question around whether they are interested, because you don't want no for an answer.
-#                         Maintain an empowering, consultative, and approachable tone throughout.
-
-
-#                         EMAIL GUIDELINES:
-#                             - Keep email concise: 100 words or 250 characters max
-#                             - Avoid jargon and buzzwords, use simplified language
-#                             - Begin with personalized opening referencing company or industry challenge
-#                             - Briefly address a potential gap and hint at solution without revealing too much (generate curiosity)
-#                             - Clearly communicate Consultadd's value: tailor-made custom AI solutions that unlock efficiency, 
-#                             rapidly automate what matters, and fit their specific stage in the AI journey
-#                             - Close with clear, low-pressure CTA inviting short meeting or discovery call (drive curiosity, avoid open-ended questions)
-#                             - Maintain empowering, consultative, and approachable tone
-    
-#                         SPAM-FREE REQUIREMENTS:
-#                             - Avoid spammy keywords tied to scams or aggressive sales tactics
-#                             - Use max 1 exclamation mark if needed
-#                             - No excessive punctuation or ALL CAPS
-#                             - No overuse of links or suspicious URLs
-#                             - Use short paragraphs with clear structure
-#                             - Focus on value/benefits, not feature dumps
-#                             - Conversational, professional, human-like tone
-#                             - Include email signature at end
-#                             - Avoid excessive numeric values
-#                             - Don't keyword-stuff or repeat phrases
-#                             - IMPORTANT: Do NOT add any email signature, sender name, role, or contact information. End the email right after the CTA.
-
-                            
-#                         SUBJECT LINE GUIDELINES:
-#                             - Create catchy, curiosity-driven subject line (6-8 words max)
-#                             - Generate a Marketing Hook
-#                             - Personalize with company name when possible
-#                             - Avoid spam triggers (FREE, ACT NOW, !!!, etc.)
-#                             - Make it relevant to their specific pain point
-                            
-#                         Output must be in JSON format with keys: "subject_line" and "email_body"
-#                     """
-#     emails_output = []
-
-#     company_name = data.get("company", "")
-#     about_company = data.get("about", "")
-#     ai_gap_items = data.get("ai_gap_analysis", [])
-
-#     for gap_item in ai_gap_items:
-#         ai_solution = gap_item.get("ai solution", "")
-#         gap_analysis = gap_item.get("gap_analysis", "")
-#         pain_points = gap_item.get("pain_points", [])
-
-#         user_prompt = f"""
-#         Generate a personalized cold email for the following context:
-        
-#         COMPANY INFORMATION:
-#         Company Name: {company_name}
-        
-#         AI SOLUTION OPPORTUNITY:
-#         Solution: {ai_solution}
-        
-#         GAP ANALYSIS:
-#         {gap_analysis}
-        
-#         KEY PAIN POINTS:
-#         {chr(15).join(f"- {pp}" for pp in pain_points[:2])}
-    
-#         Generate:
-#         1. A catchy, personalized subject line (6-8 words, no spam triggers)
-#         2. A concise email body (max 100 words/250 characters) following all guidelines
-        
-#         The email should:
-#         - Reference {company_name} specifically
-#         - Touch on their {gap_analysis} gap/challenge without being too detailed
-#         - Hint at how Consultadd's custom AI solutions can help
-#         - End with a curiosity-driven CTA (not an open-ended question)
-#         - Add a Hook into an email which will make recipent reply
-        
-#         Output JSON format:
-#         {{
-#             "subject_line": "...",
-#             "email_body": "..."
-#         }}
-#         """
-
-#         messages = [
-#             SystemMessage(content=SYSTEM_PROMPT),
-#             HumanMessage(content=user_prompt.strip())
-#         ]
-
-#         response_text = llm.invoke(messages).content.strip()
-
-#         try:
-#             parsed = json.loads(response_text)
-#             parsed["email_body"] = parsed["email_body"].replace("\n", " ").strip()
-
-#         except Exception:
-#             parsed = {
-#                 "subject_line": "Quick AI Insight for You",
-#                 "email_body": response_text.replace("\n", " ").strip()
-#             }
-
-#         emails_output.append(parsed)
-    
-#     return {
-#         "company": company_name,
-#         "emails": emails_output
-#     }
-
-# def run_email_generation_pipeline(analysis_id):
-#     enriched_data = run_full_pipeline(analysis_id)
-#     result = generate_email_and_subject(enriched_data)
-#     print(result)
-#     return result
-
-
-#-------------------------- New Code ------------------------------------- 
-
 import asyncio
 import json
 import os
@@ -165,6 +8,52 @@ from langchain_gap_analyser import run_full_pipeline
 
 load_dotenv()
 
+# ---------- SAFE JSON PARSING HELPERS ----------
+
+def safe_parse_json(response_text: str):
+    """
+    Tries to parse LLM output as JSON safely.
+    Falls back to extracting valid JSON substring if malformed.
+    """
+    if not response_text or not response_text.strip():
+        return None
+
+    try:
+        return json.loads(response_text)
+    except json.JSONDecodeError:
+        print("⚠️ JSON parse error, attempting recovery...")
+        try:
+            start = response_text.find("{")
+            end = response_text.rfind("}") + 1
+            if start != -1 and end != -1:
+                partial = response_text[start:end]
+                return json.loads(partial)
+        except Exception as e:
+            print("❌ JSON recovery failed:", e)
+        return None
+
+def normalize_email_output(parsed):
+    """
+    Ensure consistent output format:
+    { "emails": [ { "subject_line": ..., "email_body": ... } ] }
+    """
+    if not parsed:
+        return {"emails": []}
+
+    # Case 1: Expected format already
+    if "emails" in parsed:
+        return parsed
+
+    # Case 2: Single email dict
+    if "subject_line" in parsed and "email_body" in parsed:
+        return {"emails": [parsed]}
+
+    # Case 3: List of emails directly
+    if isinstance(parsed, list) and all(isinstance(e, dict) and "subject_line" in e for e in parsed):
+        return {"emails": parsed}
+
+    return {"emails": []}
+
 async def generate_email_and_subject_async(data):
     MODEL_NAME = os.getenv("OPENROUTER_MODEL", "x-ai/grok-4-fast")
     BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1").strip()
@@ -173,132 +62,131 @@ async def generate_email_and_subject_async(data):
     if not API_KEY:
         raise ValueError("OPENROUTER_API_KEY not set in environment variables")
 
+    # Use consistent argument names (ChatOpenAI expects `openai_api_base` etc.)
     llm = ChatOpenAI(
         model=MODEL_NAME,
-        base_url=BASE_URL,
-        api_key=API_KEY,
+        openai_api_base=BASE_URL,
+        openai_api_key=API_KEY,
         temperature=0.4,
     )
 
     SYSTEM_PROMPT = """
-                        You are an expert copywriter and sales strategist generating highly personalized cold emails for Consultadd, 
-                        a custom AI solutions company for SMBs and enterprises. Your company has the USP of rapidly deploying 
-                        tailor-made solutions for unique challenges of a company.
+        You are an expert copywriter and sales strategist generating highly personalized cold emails for Consultadd, 
+        a custom AI solutions company for SMBs and enterprises. Your company has the USP of rapidly deploying 
+        tailor-made solutions for unique challenges of a company.
 
-                        Your emails must be crafted to appeal respectfully and relevantly to individuals at specific companies, taking into account their role, department, industry, and business needs while positioning Consultadd as their ideal AI transformation partner.
-                        While you are getting inputs to use a particular gap, follow the guidelines below while drafting the first email
-                        Keep the email concise with a character limit of 100 words or 250 characters max. Ensures that message is impactful, making it personalised to the person and the company he is working for.
-                        Avoid jargon and buzzwords and use simplified language.
-                        Begin with a personalized opening referencing company news, recent activity, or an industry challenge relevant to the prospect.
-                        After the opening, briefly address a potential gap very quickly, also touching upon a probable solution without giving away much information but generating curiosity to know further.
-                        Whenever mentioning Consultadd, clearly communicate the brand's central value proposition: helping companies with tailor made custom AI solutions that unlock efficiency, rapidly automate what matters, and fit their specific stage in the AI journey.
-                        Close with a clear, low-pressure CTA inviting a short meeting or a discovery call. However, it should drive curiosity. Don't make it an open ended question around whether they are interested, because you don't want no for an answer.
-                        Maintain an empowering, consultative, and approachable tone throughout.
+        Follow these strict rules:
+        - Keep email concise: max 100 words / 250 characters.
+        - Avoid jargon or buzzwords.
+        - Start with personalized opening referencing company or industry challenge.
+        - Briefly mention gap and hint at solution (without giving away much).
+        - Highlight Consultadd's value: tailor-made custom AI solutions that unlock efficiency, automate what matters, 
+          and fit each company's AI journey.
+        - End with curiosity-driven, low-pressure CTA.
+        - Avoid spammy words, excessive punctuation, or signatures.
+        
+        SUBJECT LINE RULES:
+        - Catchy, 6–8 words max.
+        - Include company name if possible.
+        - No spam triggers like FREE, !!!, etc.
 
+        Output must be in **valid JSON** format:
+        {
+          "subject_line": "...",
+          "email_body": "..."
+        }
+    """
 
-                        EMAIL GUIDELINES:
-                            - Keep email concise: 100 words or 250 characters max
-                            - Avoid jargon and buzzwords, use simplified language
-                            - Begin with personalized opening referencing company or industry challenge
-                            - Briefly address a potential gap and hint at solution without revealing too much (generate curiosity)
-                            - Clearly communicate Consultadd's value: tailor-made custom AI solutions that unlock efficiency, 
-                            rapidly automate what matters, and fit their specific stage in the AI journey
-                            - Close with clear, low-pressure CTA inviting short meeting or discovery call (drive curiosity, avoid open-ended questions)
-                            - Maintain empowering, consultative, and approachable tone
-    
-                        SPAM-FREE REQUIREMENTS:
-                            - Avoid spammy keywords tied to scams or aggressive sales tactics
-                            - Use max 1 exclamation mark if needed
-                            - No excessive punctuation or ALL CAPS
-                            - No overuse of links or suspicious URLs
-                            - Use short paragraphs with clear structure
-                            - Focus on value/benefits, not feature dumps
-                            - Conversational, professional, human-like tone
-                            - Include email signature at end
-                            - Avoid excessive numeric values
-                            - Don't keyword-stuff or repeat phrases
-                            - IMPORTANT: Do NOT add any email signature, sender name, role, or contact information. End the email right after the CTA.
-
-                            
-                        SUBJECT LINE GUIDELINES:
-                            - Create catchy, curiosity-driven subject line (6-8 words max)
-                            - Generate a Marketing Hook
-                            - Personalize with company name when possible
-                            - Avoid spam triggers (FREE, ACT NOW, !!!, etc.)
-                            - Make it relevant to their specific pain point
-                            
-                        Output must be in JSON format with keys: "subject_line" and "email_body"
-                """
-                   
     async def generate_for_gap(gap_item):
         company_name = data.get("company", "")
-        ai_solution = gap_item.get("ai_solution", "")
+        ai_solution = gap_item.get("ai_solution", "") or gap_item.get("ai solution", "")
         gap_analysis = gap_item.get("gap_analysis", "")
         pain_points = gap_item.get("pain_points", [])
 
         user_prompt = f"""
-        Generate a personalized cold email for the following context:
-        
-        COMPANY INFORMATION:
-        Company Name: {company_name}
-        
-        AI SOLUTION OPPORTUNITY:
-        Solution: {ai_solution}
-        
-        GAP ANALYSIS:
+        Generate a personalized cold email for:
+
+        Company: {company_name}
+
+        AI Solution Opportunity:
+        {ai_solution}
+
+        Gap Analysis:
         {gap_analysis}
-        
-        KEY PAIN POINTS:
+
+        Key Pain Points:
         {chr(15).join(f"- {pp}" for pp in pain_points[:2])}
-    
-        Generate:
-        1. A catchy, personalized subject line (6-8 words, no spam triggers)
-        2. A concise email body (max 100 words/250 characters) following all guidelines
-        
-        The email should:
-        - Reference {company_name} specifically
-        - Touch on their {gap_analysis} gap/challenge without being too detailed
-        - Hint at how Consultadd's custom AI solutions can help
-        - End with a curiosity-driven CTA (not an open-ended question)
-        - Add a Hook into an email which will make recipent reply
-        
-        Output JSON format:
-        {{
-            "subject_line": "...",
-            "email_body": "..."
-        }}
-        """     
+
+        Follow all formatting and output JSON as instructed.
+        """
+
         messages = [
-            SystemMessage(content=SYSTEM_PROMPT),
+            SystemMessage(content=SYSTEM_PROMPT.strip()),
             HumanMessage(content=user_prompt.strip())
         ]
 
+        response = None
         try:
             response = await llm.ainvoke(messages)
-            parsed = json.loads(response.content)
-            parsed["email_body"] = parsed["email_body"].replace("\n", " ").strip()
+            raw_output = response.content.strip()
+            parsed = safe_parse_json(raw_output)
+
+            if not parsed:
+                raise ValueError("Model did not return valid JSON")
+
+            parsed["email_body"] = parsed.get("email_body", "").replace("\n", " ").strip()
+
         except Exception as e:
+            error_message = str(e)
+            if "Error code: 402" in error_message or "Insufficient credits" in error_message:
+                raise ValueError("INSUFFICIENT_CREDITS_ERROR")
+            
             print(f"Email generation failed: {e}")
+            fallback_text = raw_output if 'raw_output' in locals() else "Unable to generate email."
             parsed = {
                 "subject_line": "Quick AI Insight for You",
-                "email_body": response.content.replace("\n", " ").strip() if 'response' in locals() else "Unable to generate email."
+                "email_body": fallback_text.replace("\n", " ").strip()
             }
+
         return parsed
 
     tasks = [generate_for_gap(item) for item in data.get("ai_gap_analysis", [])]
     emails_output = await asyncio.gather(*tasks)
 
-    return {
-        "company": data.get("company", ""),
-        "emails": emails_output
-    }
+    # Normalize output format
+    final_output = normalize_email_output({"emails": emails_output})
+    final_output["company"] = data.get("company", "")
+    final_output["model_used"] = MODEL_NAME
+
+    return final_output
+
+# ---------- SYNC WRAPPER ----------
 
 def generate_email_and_subject(data):
     return asyncio.run(generate_email_and_subject_async(data))
 
-def run_email_generation_pipeline(analysis_id):
-    enriched_data = run_full_pipeline(analysis_id)
-    result = generate_email_and_subject(enriched_data)
-    print(result)
-    return result
+# ---------- PIPELINE RUNNER ----------
+
+def run_email_generation_pipeline(analysis_id, custom_model=None):
+    try: 
+        enriched_data = run_full_pipeline(analysis_id)
+
+    # Override model temporarily for regeneration
+        if custom_model:
+            os.environ["OPENROUTER_MODEL"] = custom_model
+
+        result = generate_email_and_subject(enriched_data)
+        print(f"Email generation completed using model: {os.getenv('OPENROUTER_MODEL')}")
+        return result
+    
+    except ValueError as e:
+        # Bubble up custom credit exhaustion error
+        if "INSUFFICIENT_CREDITS_ERROR" in str(e) or "Insufficient credits" in str(e):
+            raise ValueError("INSUFFICIENT_CREDITS_ERROR")
+        raise
+
+    except Exception as e:
+        print(f"Unexpected pipeline error: {e}")
+        raise
+
 

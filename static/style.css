@@ -49,3 +49,11 @@ body {
     transform: rotate(360deg);
   }
 }
+
+#loader-overlay {
+  transition: opacity 0.3s ease;
+}
+#loader-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
