@@ -1,7 +1,13 @@
+let regenCount = 0; // track regeneration attempts
+const MAX_REGEN = 3;
+
+
+
 document.addEventListener("DOMContentLoaded", function () {
   const generateBtn = document.getElementById("generate-btn");
   const inputSection = document.getElementById("input-section");
   const emailsSection = document.getElementById("emails-section");
+
   // Make sure loader and statusText elements exist in your HTML
   const loader = document.getElementById("loader");
   const statusText = document.getElementById("status-text"); 
@@ -161,6 +167,7 @@ document.addEventListener("DOMContentLoaded", function () {
     newAnalysisBtn.className =
       "mt-4 bg-gray-400 text-white py-2 px-4 rounded-lg hover:bg-gray-500";
     newAnalysisBtn.addEventListener("click", () => {
+      regenCount = 0; // reset counter for new analysis
       emailsSection.classList.add("hidden");
       emailsSection.innerHTML = "";
       inputSection.classList.remove("hidden");
@@ -168,16 +175,37 @@ document.addEventListener("DOMContentLoaded", function () {
     });
     emailsSection.appendChild(newAnalysisBtn);
 
-    // "Regenerate Email" button
+    // "Regenerate Email" button having "Regenerate Email" button with limit
+  
     const regenerateBtn = document.createElement("button");
-    regenerateBtn.textContent = "Regenerate Email";
+    regenerateBtn.textContent = `Regenerate Email (${regenCount}/${MAX_REGEN})`;
     regenerateBtn.className =
       "mt-4 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 ml-2";
-    // Add event listener for regeneration
+
+    // Disable if already at max regenerations
+    if (regenCount >= MAX_REGEN) {
+      regenerateBtn.disabled = true;
+      regenerateBtn.classList.add("opacity-50", "cursor-not-allowed");
+      regenerateBtn.textContent = `Regenerate Email (${MAX_REGEN}/${MAX_REGEN})`;
+    }
+
     regenerateBtn.addEventListener("click", async () => {
-      await regenerateEmail(analysisId); // Pass analysisId
+      if (regenCount < MAX_REGEN) {
+        regenCount++;
+        regenerateBtn.textContent = `Regenerate Email (${regenCount}/${MAX_REGEN})`;
+        await regenerateEmail(analysisId);
+
+        // Disable button when limit is reached
+        if (regenCount >= MAX_REGEN) {
+          regenerateBtn.disabled = true;
+          regenerateBtn.classList.add("opacity-50", "cursor-not-allowed");
+          regenerateBtn.textContent = `Regenerate Email (${MAX_REGEN}/${MAX_REGEN})`;
+        }
+      }
     });
-    emailsSection.appendChild(regenerateBtn);
+
+emailsSection.appendChild(regenerateBtn);
+
   }
 
   // ---------- REGENERATE EMAIL FUNCTION ----------
@@ -201,8 +229,10 @@ document.addEventListener("DOMContentLoaded", function () {
       console.log("Regeneration started with model:", model_used);
 
       // Update status to reflect the chosen model
+
       // statusText.textContent = `Regenerating with ${model_used}...`;
       statusText.textContent = `Finalizing content... `;
+
       // Start polling for the regeneration task status
       // Pass 'true' for isRegeneration flag
       pollTaskStatus(task_id, analysisId, true); 
