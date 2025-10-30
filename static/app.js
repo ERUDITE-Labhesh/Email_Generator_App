@@ -62,28 +62,31 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log("Status:", statusData.status);
 
         // New Feature - Check for Account Exchausted 
-        if (statusData.status === "ERROR: ACCOUNT_EXHAUSTED") {
-                clearInterval(pollInterval);
-                loader.classList.add("hidden"); // Hide loader
-                
-                // Set the required user-facing message
-                statusText.textContent = "Contact Admin - Account Exhausted"; 
-                
-                // Re-enable the relevant button(s) after 3 seconds for visibility
-                setTimeout(() => {
-                    statusText.textContent = "";
-                    if (currentBtn) {
-                        currentBtn.disabled = false;
-                        currentBtn.textContent = isRegeneration ? "Regenerate Email" : "Generate";
-                    }
-                    if (!isRegeneration) {
-                        generateBtn.disabled = false;
-                        generateBtn.textContent = "Generate";
-                    }
-                }, 3000); 
+ 
+          if (statusData.status === "ERROR: ACCOUNT_EXHAUSTED") {
+          clearInterval(pollInterval);
+          loader.classList.add("hidden"); // Hide loader
 
-                return; // Stop processing this poll
+          // ✅ Also trigger browser alert for clarity
+          alert("⚠️ Contact Admin - Account Exhausted");
+
+          // Re-enable relevant buttons after short delay
+          setTimeout(() => {
+            statusText.textContent = "";
+            if (isRegeneration) {
+              const regenerateBtn = document.querySelector("#emails-section button:last-child");
+              if (regenerateBtn) {
+                regenerateBtn.disabled = false;
+                regenerateBtn.textContent = "Regenerate Email";
+              }
+            } else {
+              generateBtn.disabled = false;
+              generateBtn.textContent = "Generate";
             }
+          }, 4000);
+
+          return;
+        }
 
         // Update loader message
         statusText.textContent = statusData.status;
