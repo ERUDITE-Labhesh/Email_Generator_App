@@ -10,7 +10,7 @@
   <link href="  https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
 
   <!-- Tailwind -->
-  <script src="  https://cdn.tailwindcss.com  "></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
@@ -34,20 +34,35 @@
     </div>
 
     <!-- Input Section -->
-    <div id="input-section" class="w-full p-8 rounded-3xl bg-white/30 backdrop-blur-md shadow-neumorphism flex flex-col items-center">
-      <h1 class="text-3xl font-extrabold mb-6 text-gray-800" style="font-family: 'Schibsted Grotesk', sans-serif;">
-        AI Email Generator
-      </h1>
+   <div id="input-section">
+    <h1 class="text-3xl font-bold mb-6 text-center">AI-Powered Cold Email Generator</h1>
+    <div class="max-w-md mx-auto bg-white p-6 rounded-2xl shadow-lg">
+        <div class="mb-4">
+            <label for="analysis-id" class="block text-gray-700 text-sm font-bold mb-2">Analysis ID:</label>
+            <input type="text" id="analysis-id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <!-- NEW: Designation input field -->
+        <div class="mb-4">
+            <label for="designation" class="block text-gray-700 text-sm font-bold mb-2">Recipient Designation:</label>
+            <select id="designation" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Select Designation</option>
+                <option value="CEO">CEO</option>
+                <option value="Co-Founder">Co-Founder</option>
+                <option value="Marketing Manager">Marketing Manager</option>
+                <option value="Chief Revenue Officer">Chief Revenue Officer</option>
+                <option value="Executive Director">Executive Director</option>
+                <option value="Chief Strategy Officer (CSO)">Chief Strategy Officer (CSO)</option>
+                <option value="Chief Operating Officer (COO)">Chief Operating Officer (COO)</option>
+                <option value="Chief Financial Officer">Chief Financial Officer</option>
+                <option value="CTO">CTO</option>
 
-      <input id="analysis-id" type="text" placeholder="Enter Analysis ID" 
-        class="w-full p-4 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 mb-6 bg-white/70 shadow-neumorphism-inner" />
-
-      <button id="generate-btn" class="w-full py-4 bg-blue-500 text-white font-semibold rounded-xl shadow-neumorphism hover:bg-blue-600 transition-colors">
-        Generate
-      </button>
-      
-      <!-- The loader and status were previously here -->
+            </select>
+        </div>
+        <button id="generate-btn" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            Generate
+        </button>
     </div>
+</div>
 
     <!-- Email Output Section -->
     <div id="emails-section" class="w-full mt-6 hidden"></div>

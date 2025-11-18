@@ -8,8 +8,8 @@ import os
 app = Flask(__name__)
 
 TASKS = {}
-DEFAULT_MODEL = "x-ai/grok-4-fast"
-
+#DEFAULT_MODEL = "google/gemini-2.5-flash"
+DEFAULT_MODEL = "qwen/qwen3-30b-a3b"
 
 @app.route('/')
 def home():
@@ -21,6 +21,8 @@ def home():
 def start_email_generation():
     data = request.json
     analysis_id = data.get("analysis_id")
+    # NEW: Get designation from request
+    designation = data.get("designation", "")
 
     if not analysis_id:
         return jsonify({"error": "analysis_id is required"}), 400
@@ -29,12 +31,13 @@ def start_email_generation():
     print(f"Starting new analysis with model: {DEFAULT_MODEL}")
 
     task_id = str(uuid.uuid4())
-    TASKS[task_id] = {"status": "Finding the Inital Analysis...", "result": None}
+    TASKS[task_id] = {"status": "Finding the Initial Analysis...", "result": None}
 
-    def background_job(task_id, analysis_id):
+    def background_job(task_id, analysis_id, designation):  # NEW: Pass designation
         try:
             TASKS[task_id]["status"] = "Gap analysis running..."
-            result = run_email_generation_pipeline(analysis_id)
+            # NEW: Pass designation to the pipeline
+            result = run_email_generation_pipeline(analysis_id, designation=designation)
             TASKS[task_id]["status"] = "Completed"
             TASKS[task_id]["result"] = result
         except Exception as e:
@@ -44,8 +47,8 @@ def start_email_generation():
             else:
                 TASKS[task_id]["status"] = f"Error: {str(e)}"
 
-
-    thread = threading.Thread(target=background_job, args=(task_id, analysis_id))
+    # NEW: Pass designation to the thread
+    thread = threading.Thread(target=background_job, args=(task_id, analysis_id, designation))
     thread.start()
 
     return jsonify({"task_id": task_id})
@@ -54,6 +57,8 @@ def start_email_generation():
 def regenerate_email():
     data = request.json
     analysis_id = data.get("analysis_id")
+    # NEW: Get designation from request
+    designation = data.get("designation", "")
 
     if not analysis_id:
         return jsonify({"error": "analysis_id is required"}), 400
@@ -63,17 +68,17 @@ def regenerate_email():
 
     # Randomly pick a model for regeneration
     model_list = [
-        "google/gemini-2.5-flash",
-        "qwen/qwen3-30b-a3b",
+        "google/gemini-2.5-flash-lite",
         "anthropic/claude-haiku-4.5"
     ]
     chosen_model = random.choice(model_list)
     print(f"Regenerating email using model: {chosen_model}")
 
-    def background_regen_job(task_id, analysis_id, model_name):
+    def background_regen_job(task_id, analysis_id, model_name, designation):  # NEW: Pass designation
         try:
             TASKS[task_id]["status"] = "Regenerating email..."
-            result = run_email_generation_pipeline(analysis_id, custom_model=model_name)
+            # NEW: Pass designation to the pipeline
+            result = run_email_generation_pipeline(analysis_id, custom_model=model_name, designation=designation)
             TASKS[task_id]["status"] = "Finalizing content..."
             TASKS[task_id]["result"] = result
             TASKS[task_id]["status"] = "Completed"
@@ -84,7 +89,8 @@ def regenerate_email():
             else:
                 TASKS[task_id]["status"] = f"Error: {str(e)}"
 
-    thread = threading.Thread(target=background_regen_job, args=(task_id, analysis_id, chosen_model))
+    # NEW: Pass designation to the thread
+    thread = threading.Thread(target=background_regen_job, args=(task_id, analysis_id, chosen_model, designation))
     thread.start()
 
     return jsonify({"task_id": task_id, "model_used": chosen_model})

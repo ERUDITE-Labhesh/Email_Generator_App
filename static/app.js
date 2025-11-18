@@ -1,8 +1,6 @@
 let regenCount = 0; // track regeneration attempts
 const MAX_REGEN = 3;
 
-
-
 document.addEventListener("DOMContentLoaded", function () {
   const generateBtn = document.getElementById("generate-btn");
   const inputSection = document.getElementById("input-section");
@@ -15,6 +13,9 @@ document.addEventListener("DOMContentLoaded", function () {
   // ---------- GENERATE EMAILS ----------
   generateBtn.addEventListener("click", async () => {
     const analysisId = document.getElementById("analysis-id").value.trim();
+    // NEW: Get designation value
+    const designation = document.getElementById("designation").value.trim();
+    
     if (!analysisId) {
       alert("Please enter an analysis ID");
       return;
@@ -29,14 +30,17 @@ document.addEventListener("DOMContentLoaded", function () {
       const startResponse = await fetch("/start-email-generation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ analysis_id: analysisId }),
+        body: JSON.stringify({ 
+          analysis_id: analysisId,
+          designation: designation  // NEW: Include designation
+        }),
       });
 
       if (!startResponse.ok) throw new Error("Failed to start task");
       const { task_id } = await startResponse.json();
 
       // Poll task status
-      pollTaskStatus(task_id, analysisId, false);
+      pollTaskStatus(task_id, analysisId, false, designation); // NEW: Pass designation
     } catch (err) {
       console.error(err);
       alert("Error generating emails. Check console.");
@@ -48,7 +52,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // ---------- POLLING FUNCTION ----------
-  async function pollTaskStatus(taskId, analysisId, isRegeneration = false) {
+  async function pollTaskStatus(taskId, analysisId, isRegeneration = false, designation = "") { // NEW: Add designation parameter
     const pollInterval = setInterval(async () => {
       try {
         const statusResponse = await fetch(`/task-status/${taskId}`);
@@ -109,7 +113,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 }
 
-          renderEmails(statusData.result, analysisId, isRegeneration);
+          renderEmails(statusData.result, analysisId, isRegeneration, designation); // NEW: Pass designation
         }else if (statusData.status.startsWith("Error:")) { // General error handling
                 clearInterval(pollInterval);
                 loader.classList.add("hidden");
@@ -133,14 +137,14 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // ---------- RENDER EMAILS + BUTTONS ----------
-  function renderEmails(data, analysisId, isRegeneration) {
+  function renderEmails(data, analysisId, isRegeneration, designation) { // NEW: Add designation parameter
     if (!isRegeneration) inputSection.classList.add("hidden");
     emailsSection.classList.remove("hidden");
     emailsSection.innerHTML = "";
 
     data.emails.forEach((email) => {
       const emailBox = document.createElement("div");
-      emailBox.className = "bg-gray-100 p-4 rounded-2xl shadow-neumorphism relative mb-4";
+      emailBox.className = "bg-gray-100 p-4 rounded-2xl shadow-neumorphism mb-4 flex flex-col gap-2 h-full";
 
       const copyBtn = document.createElement("button");
       copyBtn.textContent = "📋";
@@ -157,9 +161,23 @@ document.addEventListener("DOMContentLoaded", function () {
       emailBox.appendChild(subject);
 
       const body = document.createElement("p");
-      body.className = "text-gray-700 whitespace-pre-line";
+      body.className = "text-gray-700 whitespace-pre-line flex-1";
       body.textContent = email.email_body;
       emailBox.appendChild(body);
+
+      // NEW: Add designation indicator if available at bottom-right
+      if (designation) {
+        const designationTag = document.createElement("div");
+        const designationSpan=document.createElement("span")
+        designationTag.className = "flex justify-end";
+        emailBox.appendChild(designationTag);
+
+        designationSpan.className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full"
+        designationSpan.textContent = designation;
+
+        designationTag.appendChild(designationSpan)
+
+      }
 
       emailsSection.appendChild(emailBox);
     });
@@ -175,6 +193,8 @@ document.addEventListener("DOMContentLoaded", function () {
       emailsSection.innerHTML = "";
       inputSection.classList.remove("hidden");
       document.getElementById("analysis-id").value = "";
+      // NEW: Reset designation field as well
+      document.getElementById("designation").value = "";
     });
     emailsSection.appendChild(newAnalysisBtn);
 
@@ -196,7 +216,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (regenCount < MAX_REGEN) {
         regenCount++;
         regenerateBtn.textContent = `Regenerate Email (${regenCount}/${MAX_REGEN})`;
-        await regenerateEmail(analysisId);
+        await regenerateEmail(analysisId, designation); // NEW: Pass designation
 
         // Disable button when limit is reached
         if (regenCount >= MAX_REGEN) {
@@ -207,12 +227,12 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
 
-emailsSection.appendChild(regenerateBtn);
+    emailsSection.appendChild(regenerateBtn);
 
   }
 
   // ---------- REGENERATE EMAIL FUNCTION ----------
-  async function regenerateEmail(analysisId) {
+  async function regenerateEmail(analysisId, designation) { // NEW: Add designation parameter
     // Show the loader and set an initial status message
     loader.classList.remove("hidden"); 
     statusText.textContent = "Finalizing content..."; 
@@ -221,7 +241,10 @@ emailsSection.appendChild(regenerateBtn);
       const regenResponse = await fetch("/regenerate-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ analysis_id: analysisId }), // Send analysis_id
+        body: JSON.stringify({ 
+          analysis_id: analysisId, 
+          designation: designation  // NEW: Include designation
+        }), // Send analysis_id and designation
       });
 
       if (!regenResponse.ok) {
@@ -237,8 +260,8 @@ emailsSection.appendChild(regenerateBtn);
       statusText.textContent = `Finalizing content... `;
 
       // Start polling for the regeneration task status
-      // Pass 'true' for isRegeneration flag
-      pollTaskStatus(task_id, analysisId, true); 
+      // Pass 'true' for isRegeneration flag and designation
+      pollTaskStatus(task_id, analysisId, true, designation); 
     } catch (err) {
       console.error("Error during regeneration:", err);
       alert("Error regenerating email. Check console.");
