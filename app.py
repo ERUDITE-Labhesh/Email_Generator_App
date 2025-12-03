@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from langchain_email_generator import run_email_generation_pipeline
+from langchain_email_enhancer import run_email_enhancer_pipeline
+
 import threading
 import uuid
 import random
@@ -38,6 +40,9 @@ def start_email_generation():
             TASKS[task_id]["status"] = "Gap analysis running..."
             # NEW: Pass designation to the pipeline
             result = run_email_generation_pipeline(analysis_id, designation=designation)
+            TASKS[task_id]["status"] = "Enhancing email..."
+            result = run_email_enhancer_pipeline(result)
+
             TASKS[task_id]["status"] = "Completed"
             TASKS[task_id]["result"] = result
         except Exception as e:
@@ -79,6 +84,8 @@ def regenerate_email():
             TASKS[task_id]["status"] = "Regenerating email..."
             # NEW: Pass designation to the pipeline
             result = run_email_generation_pipeline(analysis_id, custom_model=model_name, designation=designation)
+            result = run_email_enhancer_pipeline(result)
+            
             TASKS[task_id]["status"] = "Finalizing content..."
             TASKS[task_id]["result"] = result
             TASKS[task_id]["status"] = "Completed"

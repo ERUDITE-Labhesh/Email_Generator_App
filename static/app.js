@@ -71,8 +71,8 @@ document.addEventListener("DOMContentLoaded", function () {
           clearInterval(pollInterval);
           loader.classList.add("hidden"); // Hide loader
 
-          // ✅ Also trigger browser alert for clarity
-          alert("⚠️ Contact Admin - Account Exhausted");
+          // Also trigger browser alert for clarity
+          alert("Contact Admin - Account Exhausted");
 
           // Re-enable relevant buttons after short delay
           setTimeout(() => {
@@ -145,16 +145,6 @@ document.addEventListener("DOMContentLoaded", function () {
     data.emails.forEach((email) => {
       const emailBox = document.createElement("div");
       emailBox.className = "bg-gray-100 p-4 rounded-2xl shadow-neumorphism mb-4 flex flex-col gap-2 h-full";
-
-      const copyBtn = document.createElement("button");
-      copyBtn.textContent = "📋";
-      copyBtn.className = "absolute top-3 right-3 text-lg copy-btn";
-      copyBtn.addEventListener("click", () => {
-        navigator.clipboard.writeText(email.email_body);
-        alert("Copied to clipboard!");
-      });
-      emailBox.appendChild(copyBtn);
-
       const subject = document.createElement("h2");
       subject.className = "text-lg font-bold mb-2";
       subject.textContent = email.subject_line;

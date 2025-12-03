@@ -61,9 +61,6 @@ async def generate_gap_analysis_async(data):
 
         try:
             response = await llm.ainvoke(messages)
-            #parsed = json.loads(response.content)
-
-            #New Code 
             content = response.content.strip()
             json_blocks = re.findall(r"\{(?:[^{}]|(?:\{[^{}]*\}))*\}", content)
             parsed = None

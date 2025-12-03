@@ -21,7 +21,7 @@ def safe_parse_json(response_text: str):
     try:
         return json.loads(response_text)
     except json.JSONDecodeError:
-        print("⚠️ JSON parse error, attempting recovery...")
+        print("JSON parse error, attempting recovery...")
         try:
             start = response_text.find("{")
             end = response_text.rfind("}") + 1
@@ -29,7 +29,7 @@ def safe_parse_json(response_text: str):
                 partial = response_text[start:end]
                 return json.loads(partial)
         except Exception as e:
-            print("❌ JSON recovery failed:", e)
+            print("JSON recovery failed:", e)
         return None
 
 def normalize_email_output(parsed):
