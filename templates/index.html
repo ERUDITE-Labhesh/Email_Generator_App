@@ -46,7 +46,7 @@
             <label for="designation" class="block text-gray-700 text-sm font-bold mb-2">Recipient Designation:</label>
             <select id="designation" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">Select Designation</option>
-                <option value="CEO">CEO</option>
+                <option value="Chief Executive Officer (CEO)">Chief Executive Officer (CEO)</option>
                 <option value="Founder">Founder</option>
                 <option value="Co-Founder">Co-Founder</option>
                 <option value="Cheif Marketing Officer (CMO)">Cheif Marketing Officer (CMO)</option>
@@ -59,6 +59,21 @@
 
             </select>
         </div>
+
+        <div class="mb-4">
+          <label for="linkedin-url" class="block text-gray-700 text-sm font-bold mb-2">LinkedIn profile:</label>
+          <input
+            type="url"
+            id="linkedin-url"
+            placeholder="https://www.linkedin.com/in/username"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            pattern="https?://.*"
+            title="Paste a full LinkedIn url (optional)"
+          />
+          <p class="text-xs text-gray-400 mt-1">Providing a LinkedIn URL lets the generator personalize the email using profile/posts (optional).</p>
+        </div>
+
+
         <button id="generate-btn" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
             Generate
         </button>

@@ -6,15 +6,14 @@ document.addEventListener("DOMContentLoaded", function () {
   const inputSection = document.getElementById("input-section");
   const emailsSection = document.getElementById("emails-section");
 
-  // Make sure loader and statusText elements exist in your HTML
   const loader = document.getElementById("loader");
   const statusText = document.getElementById("status-text"); 
 
   // ---------- GENERATE EMAILS ----------
   generateBtn.addEventListener("click", async () => {
     const analysisId = document.getElementById("analysis-id").value.trim();
-    // NEW: Get designation value
     const designation = document.getElementById("designation").value.trim();
+    const linkedinUrl = document.getElementById("linkedin-url").value.trim();
     
     if (!analysisId) {
       alert("Please enter an analysis ID");
@@ -32,7 +31,8 @@ document.addEventListener("DOMContentLoaded", function () {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           analysis_id: analysisId,
-          designation: designation  // NEW: Include designation
+          designation: designation,
+          linkedin_url: linkedinUrl
         }),
       });
 
@@ -40,41 +40,35 @@ document.addEventListener("DOMContentLoaded", function () {
       const { task_id } = await startResponse.json();
 
       // Poll task status
-      pollTaskStatus(task_id, analysisId, false, designation); // NEW: Pass designation
+      pollTaskStatus(task_id, analysisId, false, designation, linkedinUrl);
     } catch (err) {
       console.error(err);
       alert("Error generating emails. Check console.");
-      loader.classList.add("hidden"); // Hide loader on error
+      loader.classList.add("hidden");
       generateBtn.disabled = false;
       generateBtn.textContent = "Generate";
-      statusText.textContent = ""; // Clear status on error
+      statusText.textContent = ""; 
     }
   });
 
   // ---------- POLLING FUNCTION ----------
-  async function pollTaskStatus(taskId, analysisId, isRegeneration = false, designation = "") { // NEW: Add designation parameter
+  async function pollTaskStatus(taskId, analysisId, isRegeneration = false, designation = "", linkedinUrl = "") {
     const pollInterval = setInterval(async () => {
       try {
         const statusResponse = await fetch(`/task-status/${taskId}`);
         if (!statusResponse.ok) {
-             // Consider stopping polling or handling specific errors
              console.error(`Polling error for task ${taskId}: ${statusResponse.status}`);
-             return; // Skip this poll iteration
+             return; 
         }
 
         const statusData = await statusResponse.json();
         console.log("Status:", statusData.status);
-
-        // New Feature - Check for Account Exchausted 
  
           if (statusData.status === "ERROR: ACCOUNT_EXHAUSTED") {
           clearInterval(pollInterval);
-          loader.classList.add("hidden"); // Hide loader
+          loader.classList.add("hidden");
 
-          // Also trigger browser alert for clarity
           alert("Contact Admin - Account Exhausted");
-
-          // Re-enable relevant buttons after short delay
           setTimeout(() => {
             statusText.textContent = "";
             if (isRegeneration) {
@@ -97,8 +91,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (statusData.status === "Completed" && statusData.result) {
           clearInterval(pollInterval);
-          loader.classList.add("hidden"); // Hide loader when complete
-          // Enable generate button only if not regenerating
+          loader.classList.add("hidden");
           if (!isRegeneration) {
               generateBtn.disabled = false;
               generateBtn.textContent = "Generate";
@@ -113,15 +106,13 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 }
 
-          renderEmails(statusData.result, analysisId, isRegeneration, designation); // NEW: Pass designation
+          renderEmails(statusData.result, analysisId, isRegeneration, designation, linkedinUrl);
         }else if (statusData.status.startsWith("Error:")) { // General error handling
                 clearInterval(pollInterval);
                 loader.classList.add("hidden");
                 statusText.textContent = "An error occurred. See console.";
-                if (currentBtn) {
-                    currentBtn.disabled = false;
-                    currentBtn.textContent = isRegeneration ? "Regenerate Email" : "Generate";
-                }
+                currentBtn.disabled = false;
+                currentBtn.textContent = isRegeneration ? "Regenerate Email" : "Generate";
         }
       } catch (err) {
           console.error("Error polling task status:", err);
@@ -137,11 +128,12 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // ---------- RENDER EMAILS + BUTTONS ----------
-  function renderEmails(data, analysisId, isRegeneration, designation) { // NEW: Add designation parameter
+  function renderEmails(data, analysisId, isRegeneration, designation, linkedinUrl = "") {
     if (!isRegeneration) inputSection.classList.add("hidden");
     emailsSection.classList.remove("hidden");
     emailsSection.innerHTML = "";
 
+    const emails = Array.isArray(data.emails) ? data.emails : [];
     data.emails.forEach((email) => {
       const emailBox = document.createElement("div");
       emailBox.className = "bg-gray-100 p-4 rounded-2xl shadow-neumorphism mb-4 flex flex-col gap-2 h-full";
@@ -169,6 +161,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
       }
 
+      if (linkedinUrl) {
+        const linkDiv = document.createElement("div");
+        linkDiv.className = "text-xs text-gray-500 mt-2 break-all";
+        linkDiv.textContent = `Personalized using: ${linkedinUrl}`;
+        emailBox.appendChild(linkDiv);
+  
+    }
       emailsSection.appendChild(emailBox);
     });
 
@@ -183,8 +182,9 @@ document.addEventListener("DOMContentLoaded", function () {
       emailsSection.innerHTML = "";
       inputSection.classList.remove("hidden");
       document.getElementById("analysis-id").value = "";
-      // NEW: Reset designation field as well
       document.getElementById("designation").value = "";
+      document.getElementById("linkedin-url").value = "";
+
     });
     emailsSection.appendChild(newAnalysisBtn);
 
@@ -206,7 +206,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (regenCount < MAX_REGEN) {
         regenCount++;
         regenerateBtn.textContent = `Regenerate Email (${regenCount}/${MAX_REGEN})`;
-        await regenerateEmail(analysisId, designation); // NEW: Pass designation
+        await regenerateEmail(analysisId, designation,linkedinUrl);
 
         // Disable button when limit is reached
         if (regenCount >= MAX_REGEN) {
@@ -222,7 +222,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // ---------- REGENERATE EMAIL FUNCTION ----------
-  async function regenerateEmail(analysisId, designation) { // NEW: Add designation parameter
+  async function regenerateEmail(analysisId, designation, linkedinUrl = "") { 
     // Show the loader and set an initial status message
     loader.classList.remove("hidden"); 
     statusText.textContent = "Finalizing content..."; 
@@ -233,7 +233,8 @@ document.addEventListener("DOMContentLoaded", function () {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           analysis_id: analysisId, 
-          designation: designation  // NEW: Include designation
+          designation: designation,
+          linkedin_url: linkedinUrl
         }), // Send analysis_id and designation
       });
 
@@ -251,7 +252,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Start polling for the regeneration task status
       // Pass 'true' for isRegeneration flag and designation
-      pollTaskStatus(task_id, analysisId, true, designation); 
+      pollTaskStatus(task_id, analysisId, true, designation,linkedinUrl); 
     } catch (err) {
       console.error("Error during regeneration:", err);
       alert("Error regenerating email. Check console.");

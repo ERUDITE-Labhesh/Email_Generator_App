@@ -200,8 +200,8 @@ async def generate_email_and_subject_async(data, designation=""):
             - “We’ve assisted...”
             - “We implemented...”
             - “We are equipped to achieve [solution]...”
-            - “We provide the capability to resolve [pain_point]...”
-            - “We offer solutions that cut [pain_point]...”
+            - “We provide the capability to resolve {pain_points}...”
+            - “We offer solutions that cut {pain_points}...”
             - “I noticed...”
 
             Do **not** mention or reference the person’s title in the email.
@@ -274,11 +274,9 @@ async def generate_email_and_subject_async(data, designation=""):
     tasks = [generate_for_gap(item) for item in data.get("ai_gap_analysis", [])]
     emails_output = await asyncio.gather(*tasks)
 
-    # Normalize output format
     final_output = normalize_email_output({"emails": emails_output})
     final_output["company"] = data.get("company", "")
     final_output["model_used"] = MODEL_NAME
-    # NEW: Include designation in output
     final_output["designation"] = designation
 
     return final_output

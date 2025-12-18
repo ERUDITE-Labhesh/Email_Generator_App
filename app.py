@@ -1,6 +1,9 @@
 from flask import Flask, render_template, request, jsonify
 from langchain_email_generator import run_email_generation_pipeline
 from langchain_email_enhancer import run_email_enhancer_pipeline
+from apify_linkedin_data_extracter import get_linkedin_data
+
+import json 
 
 import threading
 import uuid
@@ -10,8 +13,8 @@ import os
 app = Flask(__name__)
 
 TASKS = {}
-#DEFAULT_MODEL = "google/gemini-2.5-flash"
-DEFAULT_MODEL = "qwen/qwen3-30b-a3b"
+DEFAULT_MODEL = "google/gemini-2.5-flash"
+#DEFAULT_MODEL = "qwen/qwen3-30b-a3b"
 
 @app.route('/')
 def home():
@@ -23,8 +26,8 @@ def home():
 def start_email_generation():
     data = request.json
     analysis_id = data.get("analysis_id")
-    # NEW: Get designation from request
     designation = data.get("designation", "")
+    linkedin_url = data.get("linkedin_url", "")
 
     if not analysis_id:
         return jsonify({"error": "analysis_id is required"}), 400
@@ -35,16 +38,21 @@ def start_email_generation():
     task_id = str(uuid.uuid4())
     TASKS[task_id] = {"status": "Finding the Initial Analysis...", "result": None}
 
-    def background_job(task_id, analysis_id, designation):  # NEW: Pass designation
+    def background_job(task_id, analysis_id, designation, linkedin_url): 
         try:
             TASKS[task_id]["status"] = "Gap analysis running..."
-            # NEW: Pass designation to the pipeline
-            result = run_email_generation_pipeline(analysis_id, designation=designation)
+            email_generation_result = run_email_generation_pipeline(analysis_id, designation=designation)
+
+            TASKS[task_id]["status"] = "Extracting LinkedIn data..."
+            linkedin_data = get_linkedin_data(linkedin_url)
+            # print(json.dumps(linkedin_data))
+
             TASKS[task_id]["status"] = "Enhancing email..."
-            result = run_email_enhancer_pipeline(result)
+            result = run_email_enhancer_pipeline(email_generation_result,linkedin_data=linkedin_data)
 
             TASKS[task_id]["status"] = "Completed"
             TASKS[task_id]["result"] = result
+
         except Exception as e:
             error_msg = str(e)
             if "INSUFFICIENT_CREDITS_ERROR" in error_msg or "402" in error_msg or "Insufficient credits" in error_msg:
@@ -52,8 +60,7 @@ def start_email_generation():
             else:
                 TASKS[task_id]["status"] = f"Error: {str(e)}"
 
-    # NEW: Pass designation to the thread
-    thread = threading.Thread(target=background_job, args=(task_id, analysis_id, designation))
+    thread = threading.Thread(target=background_job, args=(task_id, analysis_id, designation, linkedin_url))
     thread.start()
 
     return jsonify({"task_id": task_id})
@@ -62,8 +69,8 @@ def start_email_generation():
 def regenerate_email():
     data = request.json
     analysis_id = data.get("analysis_id")
-    # NEW: Get designation from request
     designation = data.get("designation", "")
+    linkedin_url = data.get("linkedin_url", "")
 
     if not analysis_id:
         return jsonify({"error": "analysis_id is required"}), 400
@@ -79,13 +86,16 @@ def regenerate_email():
     chosen_model = random.choice(model_list)
     print(f"Regenerating email using model: {chosen_model}")
 
-    def background_regen_job(task_id, analysis_id, model_name, designation):  # NEW: Pass designation
+    def background_regen_job(task_id, analysis_id, model_name, designation, linkedin_url): 
         try:
+            TASKS[task_id]["status"] = "Re-extracting LinkedIn data..."
+            linkedin_data = get_linkedin_data(linkedin_url)
+            print(json.dumps(linkedin_data))
+
             TASKS[task_id]["status"] = "Regenerating email..."
-            # NEW: Pass designation to the pipeline
-            result = run_email_generation_pipeline(analysis_id, custom_model=model_name, designation=designation)
-            result = run_email_enhancer_pipeline(result)
-            
+            email_generation_result = run_email_generation_pipeline(analysis_id, custom_model=model_name, designation=designation)
+            result = run_email_enhancer_pipeline(email_generation_result, linkedin_data)
+
             TASKS[task_id]["status"] = "Finalizing content..."
             TASKS[task_id]["result"] = result
             TASKS[task_id]["status"] = "Completed"
@@ -97,7 +107,7 @@ def regenerate_email():
                 TASKS[task_id]["status"] = f"Error: {str(e)}"
 
     # NEW: Pass designation to the thread
-    thread = threading.Thread(target=background_regen_job, args=(task_id, analysis_id, chosen_model, designation))
+    thread = threading.Thread(target=background_regen_job, args=(task_id, analysis_id, chosen_model, designation, linkedin_url))
     thread.start()
 
     return jsonify({"task_id": task_id, "model_used": chosen_model})

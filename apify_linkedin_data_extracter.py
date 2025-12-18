@@ -216,7 +216,7 @@ async def run_actor_and_fetch_profile_details(url=None):
         print(f"An error occurred during the Apify call: {e}")
         return []
     
-async def async_main(url):
+async def async_main_extractor(url):
 
     print("--- Starting Concurrent Apify Runs ---")
 
@@ -228,13 +228,28 @@ async def async_main(url):
 
     return  post_result, profile_result
 
-if __name__ == "__main__": 
-    url = "https://www.linkedin.com/in/richard-scherf-b679376/"
+def get_linkedin_data(url):
+    if not url:
+        return {"posts": [], "profile": {}}
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        output_posts, output_profile = asyncio.run(async_main_extractor(url))
+        loop.close()
+        return {"posts": output_posts, "profile": output_profile}
+    
+    except Exception as e:
+        print(f"Error in get_linkedin_data wrapper: {e}")
+        return {"posts": [], "profile": {}}
 
-    if client:
-        output_post, output_profile = asyncio.run(async_main(url))
-        print(output_post)
-        print("\n\n#########################################")
-        print(output_profile)
+# if __name__ == "__main__": 
+
+#     #url = "https://www.linkedin.com/in/anushkapawar/"
+#     test_url =  os.getenv("YOUR_TEST_LINKEDIN_URL")
+#     if client:
+#         output_post, output_profile = asyncio.run(async_main_extractor(test_url))
+#         print(output_post)
+#         print("\n\n#########################################")
+#         print(output_profile)
         
 
