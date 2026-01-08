@@ -6,6 +6,8 @@ Jinja2==3.1.6
 itsdangerous==2.2.0
 click==8.3.0
 blinker==1.9.0
+apify_client==2.3.0
+apify_shared==2.1.0
 
 # Networking
 requests==2.32.5
