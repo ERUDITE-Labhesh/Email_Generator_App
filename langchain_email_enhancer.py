@@ -149,12 +149,13 @@ async def llm_generate_experience_email(context, company, designation):
 
     Your email must naturally reference either:
     A past role or long-term experience pattern
-    A specific responsibility across roles
+    A specific responsibility across roles 
+    And while referencing, keep it super brief so that we get to the point faster
 
     Do not explicitly reference job titles, companies, or say “I noticed your background at X.”
     Instead:
     Open with a quiet, intuitive hook that signals deep understanding of what someone with this kind of experience thinks about
-    Use phrasing like “After years in…”, “Anyone who’s spent time in…”, or “Running this long enough teaches you…”
+    Use phrasing like “After years in…”, or “Anyone who’s spent time in…” or come up with shorter way of referencing their experience
     Transition quickly into a specific, recurring tension relevant to their role and department
 
     Maintain:
@@ -165,6 +166,13 @@ async def llm_generate_experience_email(context, company, designation):
     Maintain a professional, confident, outcome-focused tone.
     End with a low-pressure, curiosity-driven CTA.
     Also no greetings or signatures at end of emails.
+
+    Follow the structure below to write the email
+    - reference experience 
+    - touch upon a burning challenge for his company, also considering his department and designation
+    - briefly address how traditional methods may not be able to solve it. but keep this super brief
+    - Share observation or experience of how AI agents could solve this or have solved this for others
+    - End with a curiosity driven question around that specific challenge covered earlier, indirectly touching upon the starting point for them to adopt AI agents. We need to keep it conversational and not make it salesy or pushy
 
     The goal is for the recipient to think:
     “This person understands my world, and they’re not pitching me.”
@@ -195,7 +203,7 @@ async def llm_generate_experience_email(context, company, designation):
         ### INSTRUCTIONS:
         - Start the email with the role-truth question above
         - Reference the LinkedIn post naturally AFTER the opening question
-        - Keep the email under 100 words. 
+        - Keep the email under 50 words. 
         - No pitch language
 
         ### CRITICAL CONSTRAINTS (Spam Prevention & Human Tone):
