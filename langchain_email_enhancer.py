@@ -13,7 +13,6 @@ load_dotenv()
 
 POST_DATE_THRESHOLD = timedelta(days=90)
 
-MODEL_NAME = os.getenv("OPENROUTER_MODEL", "x-ai/grok-4-fast")
 BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
 API_KEY = os.getenv("OPENROUTER_API_KEY")
 
@@ -111,7 +110,7 @@ def format_career_journey_context(experience, designation):
             
         if career_summary: 
             context = (
-                f"The recipient is the {designation}. Thier professional spans approximately {total_experience: .0f} years, with key roles including \n"
+                f"The recipient is the {designation}. Their professional spans approximately {total_experience: .0f} years, with key roles including \n"
                 f"{chr(10).join(career_summary)}\n\n"
                 "Use this specific career background to frame the conversation"
             )
@@ -128,8 +127,9 @@ def format_career_journey_context(experience, designation):
 # LLM SETUP - INITALIZER 
 
 def get_llm():
+    model_name = os.getenv("OPENROUTER_MODEL", "x-ai/grok-4-fast")
     return ChatOpenAI(
-        model=MODEL_NAME,
+        model=model_name,
         openai_api_key=API_KEY,
         openai_api_base=BASE_URL,
         temperature=0.3
@@ -139,27 +139,43 @@ async def llm_generate_experience_email(context, company, designation):
     llm = get_llm()
 
     SYS_PROMPT_CAREER = """
-    You are an expert B2B cold email strategist.Generate ONE concise(max 100 words / 250 characters), personalized cold email using career experience subtly, recipient's professional background and career journey.
 
-    The recipient is the {designation}. Their career spans X years with key roles like [details in context].
+    You are refining an existing cold email draft that already addresses a relevant company and role-specific problem.
+    Personalize this email using the recipient’s career journey and experience patterns, prioritizing:
+    Long-term exposure to a specific industry or function
+    Repeated responsibility across roles
+    Years spent operating, scaling, or owning similar problems
+    Founder/operator intuition gained over time
 
-    STRICT WRITING RULES (NON-NEGOTIABLE):
-    - The email MUST open with a role-truth question.
-    - The role-truth question must reflect a common, lived experience.
-    - It must be phrased as a question.
-    - Do NOT pitch, explain, or introduce Consultadd before the question.
+    Your email must naturally reference either:
+    A past role or long-term experience pattern
+    A specific responsibility across roles
 
-    Instructions:
-    - Keep the email under 100 words.
-    - Weave the career context naturally into the opening or body, showing awareness of their experience.
-    - Maintain a professional, confident, outcome-focused tone.
-    - End with a low-pressure, curiosity-driven CTA.
+    Do not explicitly reference job titles, companies, or say “I noticed your background at X.”
+    Instead:
+    Open with a quiet, intuitive hook that signals deep understanding of what someone with this kind of experience thinks about
+    Use phrasing like “After years in…”, “Anyone who’s spent time in…”, or “Running this long enough teaches you…”
+    Transition quickly into a specific, recurring tension relevant to their role and department
+
+    Maintain:
+    Under 50 words
+    Confident, peer-to-peer tone
+    No sales language, no meeting asks
+    End with a curiosity-driven, reflective question
+    Maintain a professional, confident, outcome-focused tone.
+    End with a low-pressure, curiosity-driven CTA.
+    Also no greetings or signatures at end of emails.
+
+    The goal is for the recipient to think:
+    “This person understands my world, and they’re not pitching me.”
+
     - Always output valid JSON:
     {{
         "subject_line": "...",
         "email_body": "..."
     }}
     """
+
     user_prompt = f"""
         Company: {company}
         Recipient Designation: {designation}
@@ -176,10 +192,10 @@ async def llm_generate_experience_email(context, company, designation):
         1. Identify a key transition or a common thread in the recipient's career context (e.g., their growth from {designation} or their long-standing tenure at specific companies).
         2. Start the email by acknowledging this professional path in a way that shows you’ve actually looked at their profile. Avoid "I was looking at your LinkedIn."
 
-        INSTRUCTIONS:
+        ### INSTRUCTIONS:
         - Start the email with the role-truth question above
         - Reference the LinkedIn post naturally AFTER the opening question
-        - Keep the email under 100 words
+        - Keep the email under 100 words. 
         - No pitch language
 
         ### CRITICAL CONSTRAINTS (Spam Prevention & Human Tone):
@@ -190,11 +206,12 @@ async def llm_generate_experience_email(context, company, designation):
         5. STRUCTURE: 
         - Use a clear, benefit-driven bulleted list (2-3 points) if explaining value.
         - Include a low-friction, one-sentence Call to Action. 
+        6. Max Word Count: Do NOT exceed 100 words for the entire body.
 
         ### OUTPUT FORMAT:
         Return ONLY a valid JSON object:
         {{
-            "subject_line": "A concise, non-promotional subject line (3-6 words)",
+            "subject_line": "A concise, non-promotional subject line (3-6 words) having a eye catchy hook",
             "email_body": "The complete email body content"
         }}
         """
@@ -216,7 +233,33 @@ async def llm_generate_post_email(post_content, company, designation):
 
     Your job:
     Generate short, high-impact emails (max 100 words / 250 characters) that feel human, specific, and rooted in the recipient’s real world, post activity.
-    The recipient is the {designation}. They recently shared: "{post_content_truncated}..."
+    The recipient is the {designation}. They recently shared: "{post_content}..."
+
+    You are refining an existing cold email draft that already addresses a relevant company- and role-specific problem.
+    Personalize this email using the recipient’s recent LinkedIn post, comment, or update.
+    The email must:
+    Open by directly referencing something they posted, shared, or mentioned
+    Use the post as a lens, not a compliment
+    Draw out a natural implication, tension, or question from what they shared
+
+    Approved opening styles:
+    “Saw your post about…”
+    “Your update on ___ caught my eye…”
+    “When you mentioned ___, it made me think…”
+
+    After the opening:
+    Connect their post to a broader pattern seen in similar teams or roles
+    Avoid pitching, explaining AI, or introducing your company too early
+    If AI is mentioned, it should appear as a quiet pattern others are using, not a solution pitch
+
+    Maintain:
+    Under 50 words
+    Conversational, observant tone
+    No flattery, no “great post” filler
+    End with a light, open-ended question that invites reflection or comparison
+
+    The goal is for the recipient to feel:
+    “This person actually read what I shared — and thought about it.”
 
     Your email must naturally reference either:
     A recent LinkedIn post
@@ -225,47 +268,25 @@ async def llm_generate_post_email(post_content, company, designation):
 
     The email must start with a personalized observation based on their LinkedIn experience or recent post activity.
 
-    The opening should:
-    Reference something specific they said, posted, shared, or did
-    Or reference a responsibility pattern from their past roles
-    Or highlight a universal truth of their role in a conversational way
-    The opening must NOT start with what Consultadd has done.
-    It must start in their world.
-    Approved opening styles (pick one):
-    Post-based opener
-    “Saw your post about tightening compliance workflows…”
-    “Noticed your update about hiring two fulfillment specialists…”
-
-    Role-truth opener (pattern recognition, not flattery)
-    “When something escalates, does it still land on your desk first?”
-    “When a source looks off, are you still the one untangling it?”
-
-    Industry pattern opener
-    “Across most supply-chain teams, vendor updates still end up owning half the week…”
-    “In many CS orgs, escalations still skip the playbooks and land on one desk…”
-
-    2. Where Consultadd Comes In
-
+    Where Consultadd Comes In
     After the opening sentence(s), and only then, introduce Consultadd’s capability as a soft bridge, not a pitch:
-
     Approved transitions:
     “We’ve been seeing teams solve this with agentic AI…”
     “We recently helped a team automate this without changing their systems…”
     “This is where AI agents tend to remove 10–20 hrs/week for teams like yours…”
     This keeps the email recipient-first, insight-led, and avoids hardsell energy.
 
-    3. Tone
+    Tone
     Confident, professional, conversational
     Zero fluff, zero corporate jargon
     Short sentences
     No negativity, no fear-based wording
     Outcome-focused
 
-    4. Role-specific relevance:
+    Role-specific relevance:
     Maintain the same consistency in relevance as earlier for their roles. Adapt benefits, pain points, and CTA depending on role and department.
 
-    5. Value Proposition
-
+    Value Proposition
     Highlight that Consultadd builds:
     Custom AI agents 
     Adaptive and intelligent agents 
@@ -274,8 +295,7 @@ async def llm_generate_post_email(post_content, company, designation):
     Increase productivity 
     Unlock faster growth and business value
 
-    6. CTA
-
+    CTA
     End with a short, curiosity-based question that keeps the conversation going.
     Avoid any reference to meetings, calls, demos, time, or scheduling.
     The CTA should feel like a natural continuation of the email — a prompt to share their experience.
@@ -308,7 +328,8 @@ async def llm_generate_post_email(post_content, company, designation):
         Recent LinkedIn Post:
         {post_content}
 
-        Write a short, personalized cold email (max 100 words / 250 characters) that naturally references their recent LinkedIn post as the opener. Your goal is to write a high-conversion, short cold email. The post reference should feel like a genuine conversation starter, not a forced compliment or not a marketing bot.
+        Write a short, personalized cold email (max 100 words / 250 characters) that naturally references their recent LinkedIn post as the opener. 
+        Your goal is to write a high-conversion, short cold email. The post reference should feel like a genuine conversation starter, not a forced compliment or not a marketing bot.
 
         **Critical Requirements - Email Deliverability & Spam Prevention:**
 
@@ -364,23 +385,36 @@ async def llm_rewrite_email(subject, body, company, designation):
     SYS_PROMPT_REFINE = """
 
     You are an expert B2B copywriter and sales strategist specializing in personalized cold emails. Your unique niche is generating short, highly **attention-grabbing, humorous** emails that remain professional enough for business outreach.
+    Use a “poking the bear” technique (light contradiction, curiosity, pattern-interrupt — never rude). 
 
     Your job is to generate a single cold outreach email based on the following information the user provides:
     * The company sending the email (Your client).
     * The company receiving the email (The prospect).
     * The core value proposition / problem solved.
-    * Specific details, metrics, or benefits to include.
 
     Tone and Style Requirements:
     - Humor: Light, playful, and confidence-driven. The humor must feel natural and avoid being juvenile or forced.
     - Confidence: Confident, assertive, conversational, and outcome-focused. Avoid sounding salesy, desperate, or robotic.
     - Clarity: Short, punchy, and highly skimmable.
+    - Sound human, casual, and natural
+
+    CTA:
+    End with a short, curiosity-based question that keeps the conversation going.
+    Avoid any reference to meetings, calls, demos, time, or scheduling.
+    The CTA should feel like a natural continuation of the email — a prompt to share their experience.
+
+    Approved CTA styles:
+    Curiosity loop (“Wondering if that’s familiar on your side.”)
+    Pattern-check (“Still happening on your end?”)
+    Open-ended reflection (“How does that show up for you these days?”)
+    Light peer exchange (“Open to comparing notes?”)
+    Or allow the final question in the email body to be the CTA.
 
     Strict Constraints:
     - Email Count: Generate 1 email only.
     - Max Word Count: Do NOT exceed 100 words for the entire body.
     - Jargon: Do NOT use clichés, hype, or buzzwords (e.g., "synergy," "disrupt," "cutting-edge").
-    - Greeting: The email body must start with a casual greeting (e.g., "Hey," "Quick question," or similar) followed immediately by the hook. Do NOT use the generic "Hi [Name]."
+    - Email should followed immediately by the hook. 
 
     Email Structure:
     1. Subject Line: Must be catchy, curiosity-driven, and include a touch of humor (e.g., "I think we found where your missing weeks went," "Want a tireless intern who never sleeps?").
@@ -399,14 +433,28 @@ async def llm_rewrite_email(subject, body, company, designation):
     """
 
     user_prompt = f"""
-        Company: {company}
-        Recipient Designation: {designation}
+    You are writing a cold outreach email using the system instructions above.
+    Use the following inputs as context and inspiration.
+    Do not copy them verbatim — reinterpret, sharpen, and improve them.
 
-        Original Subject: {subject}
-        Original Body: {body}
+    Company: {company}
+    Recipient Designation: {designation}
 
-        Rewrite for clarity, persuasion, and personalization.
-        """
+    Original Subject: {subject}
+    Original Body: {body}
+
+    Instructions:
+    Extract the core value proposition, pain point, and implied benefit from the original subject and body.
+    Improve clarity, confidence, and humor while keeping it professional.
+    Add light, clever “poking the bear” energy (pattern interrupt or curiosity) Talk more around their competitors. 
+    Keep it short, punchy, and skimmable.
+    Follow all system prompt constraints strictly.
+    Also no greetings or signature at end of emails.
+    Output only the final email in the required JSON format.
+    Generate the email now.
+    Rewrite for clarity, persuasion, and personalization.
+    
+    """
     
     resp = await llm.ainvoke([
         SystemMessage(content= SYS_PROMPT_REFINE),
@@ -437,6 +485,8 @@ async def _run_enhancer_async(email_generation_result, linkedin_data):
     recent_posts = filter_recent_posts(posts)
     career_info = format_career_journey_context(experience, designation)
 
+    print(company_name)
+    print(designation)
     print(recent_posts)
     print(career_info)
 
@@ -445,22 +495,25 @@ async def _run_enhancer_async(email_generation_result, linkedin_data):
         res = await llm_generate_experience_email(
             career_info["personalization_context"], company_name, designation
         )
-        print(f"CLI OUTPUT (Career): {res['subject_line']}")
         emails.append(res)
         
     for post in recent_posts: 
-        emails.append(await llm_generate_post_email(
+        print("DEBUG: Generating Post Based Email...")
+        res = await llm_generate_post_email(
             post["content"], company_name, designation
-        ))
-    
+        )
+        emails.append(res)
+
     for draft in draft_emails: 
-        emails.append(await llm_rewrite_email(
+        print("DEBUG: Generating Enhance Email...")
+        res = await llm_rewrite_email(
             draft["subject_line"], 
             draft["email_body"],
             company_name, 
             designation
-        ))
-    
+        )
+        emails.append(res)
+
     unique = []
     seen = set()
     for e in emails:

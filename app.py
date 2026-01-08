@@ -13,8 +13,9 @@ import os
 app = Flask(__name__)
 
 TASKS = {}
-DEFAULT_MODEL = "google/gemini-2.5-flash"
+# DEFAULT_MODEL = "google/gemini-2.5-flash"
 #DEFAULT_MODEL = "qwen/qwen3-30b-a3b"
+DEFAULT_MODEL = "google/gemini-2.5-flash-lite"
 
 @app.route('/')
 def home():
@@ -45,7 +46,6 @@ def start_email_generation():
 
             TASKS[task_id]["status"] = "Extracting LinkedIn data..."
             linkedin_data = get_linkedin_data(linkedin_url)
-            # print(json.dumps(linkedin_data))
 
             TASKS[task_id]["status"] = "Enhancing email..."
             result = run_email_enhancer_pipeline(email_generation_result,linkedin_data=linkedin_data)
@@ -80,7 +80,9 @@ def regenerate_email():
 
     # Randomly pick a model for regeneration
     model_list = [
-        "google/gemini-2.5-flash-lite",
+        "openai/gpt-oss-120b",
+        "google/gemini-2.5-flash",
+        "x-ai/grok-4.1-fast",
         "anthropic/claude-haiku-4.5"
     ]
     chosen_model = random.choice(model_list)
@@ -106,7 +108,6 @@ def regenerate_email():
             else:
                 TASKS[task_id]["status"] = f"Error: {str(e)}"
 
-    # NEW: Pass designation to the thread
     thread = threading.Thread(target=background_regen_job, args=(task_id, analysis_id, chosen_model, designation, linkedin_url))
     thread.start()
 
