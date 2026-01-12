@@ -2,27 +2,39 @@ import re
 import asyncio
 import json
 import os
-from langchain_openai import ChatOpenAI
-from langchain.schema import SystemMessage, HumanMessage
 from dotenv import load_dotenv
 from inital_analysis_data_extractor import main_extractor
 
 load_dotenv()
 
-async def generate_gap_analysis_async(data):
+_llm_instance = None 
+_llm_model_name = None 
+
+def get_llm():
+    global _llm_instance, _llm_model_name
+
     MODEL_NAME = os.getenv("OPENROUTER_MODEL", "x-ai/grok-4-fast")
     BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1").strip()
     API_KEY = os.getenv("OPENROUTER_API_KEY")
 
     if not API_KEY:
         raise ValueError("OPENROUTER_API_KEY not set in environment variables")
+    
+    if _llm_instance is None or _llm_model_name != MODEL_NAME:
+        from langchain_openai import ChatOpenAI
+        _llm_instance = ChatOpenAI(
+            model=MODEL_NAME,
+            openai_api_base=BASE_URL,
+            openai_api_key=API_KEY,
+            temperature=0.4,
+        )
+        _llm_model_name = MODEL_NAME
+    
+    return _llm_instance
 
-    llm = ChatOpenAI(
-        model=MODEL_NAME,
-        base_url=BASE_URL,  # Use base_url (not openai_api_base in newer versions)
-        api_key=API_KEY,
-        temperature=0.4,
-    )
+async def generate_gap_analysis_async(data):
+    from langchain.schema import SystemMessage, HumanMessage 
+    llm = get_llm()
 
     SYSTEM_PROMPT = """
                         You are an expert in AI transformation for all the industries.
@@ -90,8 +102,11 @@ async def generate_gap_analysis_async(data):
 
     tasks = [process_opportunity(opp) for opp in data.get("ai_opportunities", [])]
     results = await asyncio.gather(*tasks)
-
     data["ai_gap_analysis"] = results
+
+    import gc
+    gc.collect()
+
     return data
 
 def generate_gap_analysis(data):
@@ -107,3 +122,4 @@ def run_full_pipeline(analysis_id):
         # Bubble up custom credit exhaustion error
         if "INSUFFICIENT_CREDITS_ERROR" in str(e) or "Insufficient credits" in str(e):
             raise ValueError("INSUFFICIENT_CREDITS_ERROR")
+        raise

@@ -3,11 +3,8 @@ import json
 import asyncio
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
-from langchain_openai import ChatOpenAI
-from langchain.schema import SystemMessage, HumanMessage
-from langchain_core.output_parsers import JsonOutputParser
 from dotenv import load_dotenv
-
+import gc
 
 load_dotenv()
 
@@ -15,6 +12,7 @@ POST_DATE_THRESHOLD = timedelta(days=90)
 
 BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
 API_KEY = os.getenv("OPENROUTER_API_KEY")
+_llm_instance = None
 
 if not API_KEY:
     raise ValueError("OPENROUTER_API_KEY not set in environment variables")
@@ -127,16 +125,22 @@ def format_career_journey_context(experience, designation):
 # LLM SETUP - INITALIZER 
 
 def get_llm():
-    model_name = os.getenv("OPENROUTER_MODEL", "x-ai/grok-4-fast")
-    return ChatOpenAI(
-        model=model_name,
-        openai_api_key=API_KEY,
-        openai_api_base=BASE_URL,
-        temperature=0.3
-    )
+    global _llm_instance
 
-async def llm_generate_experience_email(context, company, designation): 
-    llm = get_llm()
+    if _llm_instance is None:
+        from langchain_openai import ChatOpenAI
+
+        model_name = os.getenv("OPENROUTER_MODEL", "x-ai/grok-4-fast")
+        _llm_instance = ChatOpenAI(
+            model=model_name,
+            openai_api_key=API_KEY,
+            openai_api_base=BASE_URL,
+            temperature=0.3
+        )
+    return _llm_instance
+
+async def llm_generate_experience_email(llm, context, company, designation): 
+    from langchain.schema import SystemMessage, HumanMessage
 
     SYS_PROMPT_CAREER = """
 
@@ -223,6 +227,7 @@ async def llm_generate_experience_email(context, company, designation):
             "email_body": "The complete email body content"
         }}
         """
+    from langchain.schema import SystemMessage, HumanMessage
     response = await llm.ainvoke([
         SystemMessage(content=SYS_PROMPT_CAREER),
         HumanMessage(content=user_prompt)
@@ -233,8 +238,8 @@ async def llm_generate_experience_email(context, company, designation):
 
     return parsed
 
-async def llm_generate_post_email(post_content, company, designation):
-    llm = get_llm()
+async def llm_generate_post_email(llm, post_content, company, designation):
+    from langchain.schema import SystemMessage, HumanMessage
 
     SYS_PROMPT_POST = """
     You are an expert B2B copywriter and sales strategist specializing in ultra-personalized cold emails for Consultadd, a custom AI solutions company that helps SMBs deploy agentic AI systems rapidly and effectively.
@@ -375,7 +380,6 @@ async def llm_generate_post_email(post_content, company, designation):
             "email_body": "The full email body text"
         }}
         """
-    
     resp = await llm.ainvoke([
         SystemMessage(content= SYS_PROMPT_POST),
         HumanMessage(content=user_prompt)
@@ -387,8 +391,8 @@ async def llm_generate_post_email(post_content, company, designation):
 
     return parsed
 
-async def llm_rewrite_email(subject, body, company, designation):
-    llm = get_llm()
+async def llm_rewrite_email(llm, subject, body, company, designation):
+    from langchain.schema import SystemMessage, HumanMessage
 
     SYS_PROMPT_REFINE = """
 
@@ -476,70 +480,104 @@ async def llm_rewrite_email(subject, body, company, designation):
     return parsed
 
 async def _run_enhancer_async(email_generation_result, linkedin_data):
-    emails = []
+    llm = get_llm()
+
     try:
-        posts = json.loads(linkedin_data.get("posts", "[]"))
-        experience = json.loads(linkedin_data.get("profile", "[]"))
+        posts = json.loads(linkedin_data["posts"]) if linkedin_data.get("posts") else []
+        experience = json.loads(linkedin_data["profile"]) if linkedin_data.get("profile") else []
+
+        draft_emails = email_generation_result.get("emails", [])
+        print(draft_emails)
+        company_name = email_generation_result.get("company", "Company")
+        designation = email_generation_result.get("designation", "Decision Maker")
+
+        recent_posts = filter_recent_posts(posts)
+        career_info = (
+            format_career_journey_context(experience, designation)
+            if experience else None
+        )
+        print(company_name)
+        print(designation)
+        print(recent_posts)
+        print(career_info)
+
+        tasks = []
+
+        if career_info:
+            print("DEBUG: Generating Career Journey Email...")
+            tasks.append(
+                llm_generate_experience_email(
+                llm,
+                career_info["personalization_context"], 
+                company_name, 
+                designation
+            )
+        )
+        
+        for post in recent_posts: 
+            print("DEBUG: Generating Post Based Email...")
+            tasks.append(llm_generate_post_email(
+                llm,
+                post["content"], 
+                company_name, 
+                designation
+            )
+        )
+
+        for draft in draft_emails: 
+            print("DEBUG: Generating Enhance Email...")
+            tasks.append(llm_rewrite_email(
+                llm,
+                draft["subject_line"], 
+                draft["email_body"],
+                company_name, 
+                designation
+            )
+        )
+            
+        if not tasks:
+            return normalize_output({"emails": []})
+        
+        results = []
+        for task in tasks:
+            try:
+                result = await task
+                results.append(result)
+            except Exception as e:
+                print("Task failed:", e)
+                continue
+            
+        unique = []
+        seen = set()
+
+        for e in results:
+            if isinstance(e, Exception):
+                continue
+            key = (e["subject_line"].lower() + e["email_body"].lower())
+            if key not in seen:
+                seen.add(key)
+                unique.append(e)
+
+        gc.collect()
+        return normalize_output({"emails": unique})
+
     except Exception as e:
         print(f"Error parsing LinkedIn data JSON strings: {e}. Defaulting to empty lists.")
-        posts = []
-        experience = []
-
-    draft_emails = email_generation_result.get("emails", [])
-    print(draft_emails)
-    company_name = email_generation_result.get("company", "Company")
-    designation = email_generation_result.get("designation", "Decision Maker")
-
-    recent_posts = filter_recent_posts(posts)
-    career_info = format_career_journey_context(experience, designation)
-
-    print(company_name)
-    print(designation)
-    print(recent_posts)
-    print(career_info)
-
-    if career_info:
-        print("DEBUG: Generating Career Journey Email...")
-        res = await llm_generate_experience_email(
-            career_info["personalization_context"], company_name, designation
-        )
-        emails.append(res)
-        
-    for post in recent_posts: 
-        print("DEBUG: Generating Post Based Email...")
-        res = await llm_generate_post_email(
-            post["content"], company_name, designation
-        )
-        emails.append(res)
-
-    for draft in draft_emails: 
-        print("DEBUG: Generating Enhance Email...")
-        res = await llm_rewrite_email(
-            draft["subject_line"], 
-            draft["email_body"],
-            company_name, 
-            designation
-        )
-        emails.append(res)
-
-    unique = []
-    seen = set()
-    for e in emails:
-        key = (e["subject_line"].lower() + e["email_body"].lower())
-        if key not in seen:
-            seen.add(key)
-            unique.append(e)
-
-    return normalize_output({"emails": unique})
+        gc.collect()
+        return normalize_output({"emails": []})
 
 def run_email_enhancer_pipeline(email_generation_result, linkedin_data):
-    result =  asyncio.run(
-        _run_enhancer_async(email_generation_result, linkedin_data)
-    )
-
-    return result
-
-
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+    
+    if loop and loop.is_running():
+        return _run_enhancer_async(email_generation_result, linkedin_data)
+    else:
+        return asyncio.run(
+            _run_enhancer_async(email_generation_result, linkedin_data)
+        )
 
 
     

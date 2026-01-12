@@ -1,8 +1,6 @@
 import asyncio
 import json
 import os
-from langchain_openai import ChatOpenAI
-from langchain.schema import SystemMessage, HumanMessage
 from dotenv import load_dotenv
 from langchain_gap_analyser import run_full_pipeline
 
@@ -54,7 +52,12 @@ def normalize_email_output(parsed):
 
     return {"emails": []}
 
-async def generate_email_and_subject_async(data, designation=""):
+_llm_instance = None 
+_llm_model_name = None
+
+def get_llm(): 
+    global _llm_instance, _llm_model_name
+
     MODEL_NAME = os.getenv("OPENROUTER_MODEL", "x-ai/grok-4-fast")
     BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1").strip()
     API_KEY = os.getenv("OPENROUTER_API_KEY")
@@ -62,13 +65,21 @@ async def generate_email_and_subject_async(data, designation=""):
     if not API_KEY:
         raise ValueError("OPENROUTER_API_KEY not set in environment variables")
 
-    # Use consistent argument names (ChatOpenAI expects `openai_api_base` etc.)
-    llm = ChatOpenAI(
+    if _llm_instance is None or _llm_model_name != MODEL_NAME:
+        from langchain_openai import ChatOpenAI
+
+        _llm_instance = ChatOpenAI(
         model=MODEL_NAME,
         openai_api_base=BASE_URL,
         openai_api_key=API_KEY,
         temperature=0.4,
     )
+    _llm_model_name = MODEL_NAME
+    
+    return _llm_instance
+
+async def generate_email_and_subject_async(llm, data, designation=""):
+    from langchain.schema import SystemMessage, HumanMessage
 
     # NEW: Enhanced system prompt with designation awareness
     SYSTEM_PROMPT = f"""
@@ -272,14 +283,18 @@ async def generate_email_and_subject_async(data, designation=""):
 
     final_output = normalize_email_output({"emails": emails_output})
     final_output["company"] = data.get("company", "")
-    final_output["model_used"] = MODEL_NAME
+    final_output["model_used"] = os.getenv("OPENROUTER_MODEL")
     final_output["designation"] = designation
+
+    import gc
+    gc.collect()
 
     return final_output
 
 # ---------- SYNC WRAPPER ----------
 def generate_email_and_subject(data, designation=""):
-    return asyncio.run(generate_email_and_subject_async(data, designation))
+    llm = get_llm()
+    return asyncio.run(generate_email_and_subject_async(llm, data, designation))
 
 # ---------- PIPELINE RUNNER ----------
 def run_email_generation_pipeline(analysis_id, custom_model=None, designation=""):
