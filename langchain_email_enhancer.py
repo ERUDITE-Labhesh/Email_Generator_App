@@ -159,7 +159,7 @@ async def llm_generate_experience_email(llm, context, company, designation):
     Do not explicitly reference job titles, companies, or say “I noticed your background at X.”
     Instead:
     Open with a quiet, intuitive hook that signals deep understanding of what someone with this kind of experience thinks about
-    Use phrasing like “After years in…”, or “Anyone who’s spent time in…” or come up with shorter way of referencing their experience
+    Do not repeat their experience to them, instead hint and quickly transition to a specific, recurring tension relevant to their role and department
     Transition quickly into a specific, recurring tension relevant to their role and department
 
     Maintain:
@@ -195,7 +195,7 @@ async def llm_generate_experience_email(llm, context, company, designation):
         Based on this career journey that is Career Context:
         {context}
 
-        Act as a senior, human-centric Sales Development Representative (SDR).(max 100 words / 250 characters), Your task is to write a short, high-impact cold email to a {designation} based on the narrative of their professional journey.
+        Act as a senior, human-centric Sales Development Representative (SDR) (max 50 words / 250 characters), Your task is to write a short, high-impact cold email to a {designation} based on the narrative of their professional journey.
         ### INPUT DATA:
         - Recipient Designation: {designation}
         - Career Background Context: {context}
@@ -245,7 +245,7 @@ async def llm_generate_post_email(llm, post_content, company, designation):
     You are an expert B2B copywriter and sales strategist specializing in ultra-personalized cold emails for Consultadd, a custom AI solutions company that helps SMBs deploy agentic AI systems rapidly and effectively.
 
     Your job:
-    Generate short, high-impact emails (max 100 words / 250 characters) that feel human, specific, and rooted in the recipient’s real world, post activity.
+    Generate short, high-impact emails (max 50 words / 250 characters) that feel human, specific, and rooted in the recipient’s real world, post activity.
     The recipient is the {designation}. They recently shared: "{post_content}..."
 
     You are refining an existing cold email draft that already addresses a relevant company- and role-specific problem.
@@ -341,7 +341,7 @@ async def llm_generate_post_email(llm, post_content, company, designation):
         Recent LinkedIn Post:
         {post_content}
 
-        Write a short, personalized cold email (max 100 words / 250 characters) that naturally references their recent LinkedIn post as the opener. 
+        Write a short, personalized cold email (max 50 words / 250 characters) that naturally references their recent LinkedIn post as the opener. 
         Your goal is to write a high-conversion, short cold email. The post reference should feel like a genuine conversation starter, not a forced compliment or not a marketing bot.
 
         **Critical Requirements - Email Deliverability & Spam Prevention:**
@@ -396,44 +396,77 @@ async def llm_rewrite_email(llm, subject, body, company, designation):
 
     SYS_PROMPT_REFINE = """
 
-    You are an expert B2B copywriter and sales strategist specializing in personalized cold emails. Your unique niche is generating short, highly **attention-grabbing, humorous** emails that remain professional enough for business outreach.
-    Use a “poking the bear” technique (light contradiction, curiosity, pattern-interrupt — never rude). 
+    You are an expert B2B copywriter and sales strategist who writes short, sharply personalized cold outreach emails.
+    Use a “poking the bear” technique
+    Your specialty is creating nuanced, insight-led emails that use company + industry context to hit the right nerve for the specific department and role of the recipient, without sounding salesy.
 
-    Your job is to generate a single cold outreach email based on the following information the user provides:
-    * The company sending the email (Your client).
-    * The company receiving the email (The prospect).
-    * The core value proposition / problem solved.
+    You write like a confident human, not a pitch deck, light-hearted, conversational, and using playful curiosity or gentle contradiction to break patterns without ever being cringe.
 
-    Tone and Style Requirements:
-    - Humor: Light, playful, and confidence-driven. The humor must feel natural and avoid being juvenile or forced.
-    - Confidence: Confident, assertive, conversational, and outcome-focused. Avoid sounding salesy, desperate, or robotic.
-    - Clarity: Short, punchy, and highly skimmable.
-    - Sound human, casual, and natural
+    Generate one cold outreach email using the following inputs:
+    Sending company (client)
+    Receiving company (prospect)
+    Recipient’s department & role
+    Core problem / value proposition
 
-    CTA:
-    End with a short, curiosity-based question that keeps the conversation going.
-    Avoid any reference to meetings, calls, demos, time, or scheduling.
-    The CTA should feel like a natural continuation of the email — a prompt to share their experience.
+    Tone & Style Rules
+    Light, playful humor that feels natural in a B2B context
+    Confident, conversational, and outcome-oriented
+    Insight-driven (show you understand their world)
+    Short, punchy, skimmable
+    Must sound written by a real human
 
-    Approved CTA styles:
+    Email Constraints (Non-Negotiable)
+    Email count: 1
+    Max length: 50 words total (email body only)
+    No jargon, clichés, or buzzwords (e.g. synergy, disrupt, game-changing)
+    No meetings, calls, demos, time, or scheduling references
+    The email body must start immediately with the hook (no greetings)
+    Email Structure
+    Subject Line
+    Curiosity-driven with a touch of humor
+    Pattern-interrupting, not clickbait
+
+    Opening Hook
+    A playful, insight-based line tied to their role or pain
+
+    Value Insight
+    1–2 lines showing understanding of their problem and how it’s solved
+
+    Personalization
+    Clearly connect the insight to the recipient’s department/role or company context
+
+    CTA (Final Line)
+    End with one low-pressure, curiosity-based question.
+    Approved styles:
     Curiosity loop (“Wondering if that’s familiar on your side.”)
-    Pattern-check (“Still happening on your end?”)
-    Open-ended reflection (“How does that show up for you these days?”)
+    Pattern check (“Still happening on your end?”)
+    Open reflection (“How does that show up for you today?”)
     Light peer exchange (“Open to comparing notes?”)
-    Or allow the final question in the email body to be the CTA.
 
-    Strict Constraints:
-    - Email Count: Generate 1 email only.
-    - Max Word Count: Do NOT exceed 100 words for the entire body.
-    - Jargon: Do NOT use clichés, hype, or buzzwords (e.g., "synergy," "disrupt," "cutting-edge").
-    - Email should followed immediately by the hook. 
+    Subject line:
+    You write like a confident human, not a pitch deck, casual, sharp, and lightly playful. Use curiosity or gentle contradiction to break patterns without ever sounding cringe.
+    Subject lines must follow the same energy: conversational, slightly unexpected, and insight-led playful enough to earn the open, never clickbait.
 
-    Email Structure:
-    1. Subject Line: Must be catchy, curiosity-driven, and include a touch of humor (e.g., "I think we found where your missing weeks went," "Want a tireless intern who never sleeps?").
-    2. Opening Hook: The email must start with a humorous, attention-grabbing sentence that relates to the prospect's pain point or the benefit you provide.
-    3. Value Explanation: A brief explanation (1–2 sentences) of the core value proposition/problem solved.
-    4. Personalization: Tie the value directly to the recipient’s specific situation using the user-provided details.
-    5. Call-to-Action (CTA): End with a low-pressure, curiosity-driven invitation for a short chat (e.g., "Worth 5 minutes to see how that works?" or "Fancy a quick chat?").
+    Subject lines should:
+    Be 5–8 words max
+    Sound like a thought, not a headline
+    Hint at a specific problem or observation
+    Avoid hype, emojis, ALL CAPS, or sales language
+
+    Good Subject Line Examples (Model Should Emulate)
+    “Quick reality check”
+    “This might sound familiar”
+    “A small pattern I noticed”
+    “Most teams don’t love this”
+    “Something usually breaks here”
+    “Noticed this about your setup”
+
+    Bad Subject Line Examples (Model Must Avoid)
+    “Revolutionize your workflow”
+    “Increase efficiency by 300%”
+    “Game-changing solution for your team”
+    “Let’s talk growth”
+    “Exclusive opportunity”
 
     Output Format:
     Always output valid JSON:
@@ -441,7 +474,6 @@ async def llm_rewrite_email(llm, subject, body, company, designation):
         "subject_line": "...",
         "email_body": "..."
     }}
-    
     """
 
     user_prompt = f"""
@@ -465,6 +497,10 @@ async def llm_rewrite_email(llm, subject, body, company, designation):
     Output only the final email in the required JSON format.
     Generate the email now.
     Rewrite for clarity, persuasion, and personalization.
+
+    Maintain:
+    Under 50 words
+    Conversational, observant tone
     
     """
     
@@ -546,7 +582,7 @@ async def _run_enhancer_async(email_generation_result, linkedin_data):
             except Exception as e:
                 print("Task failed:", e)
                 continue
-            
+
         unique = []
         seen = set()
 

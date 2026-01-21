@@ -13,9 +13,7 @@ import os
 app = Flask(__name__)
 
 TASKS = {}
-# DEFAULT_MODEL = "google/gemini-2.5-flash"
-#DEFAULT_MODEL = "qwen/qwen3-30b-a3b"
-DEFAULT_MODEL = "google/gemini-2.5-flash-lite"
+DEFAULT_MODEL = "anthropic/claude-haiku-4.5"
 
 @app.route('/')
 def home():
@@ -80,10 +78,11 @@ def regenerate_email():
 
     # Randomly pick a model for regeneration
     model_list = [
+        "google/gemini-2.5-flash-lite"
+        "anthropic/claude-haiku-4.5",
         "openai/gpt-oss-120b",
         "google/gemini-2.5-flash",
         "x-ai/grok-4.1-fast",
-        "anthropic/claude-haiku-4.5"
     ]
     chosen_model = random.choice(model_list)
     print(f"Regenerating email using model: {chosen_model}")
