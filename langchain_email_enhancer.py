@@ -145,7 +145,7 @@ async def llm_generate_experience_email(llm, context, company, designation):
     SYS_PROMPT_CAREER = """
 
     You are refining an existing cold email draft that already addresses a relevant company and role-specific problem.
-    Personalize this email using the recipient’s career journey and experience patterns, prioritizing:
+    Personalize this email Under 25 words using the recipient’s career journey and experience patterns, prioritizing:
     Long-term exposure to a specific industry or function
     Repeated responsibility across roles
     Years spent operating, scaling, or owning similar problems
@@ -163,7 +163,7 @@ async def llm_generate_experience_email(llm, context, company, designation):
     Transition quickly into a specific, recurring tension relevant to their role and department
 
     Maintain:
-    Under 50 words
+    Under 30 words
     Confident, peer-to-peer tone
     No sales language, no meeting asks
     End with a curiosity-driven, reflective question
@@ -195,7 +195,7 @@ async def llm_generate_experience_email(llm, context, company, designation):
         Based on this career journey that is Career Context:
         {context}
 
-        Act as a senior, human-centric Sales Development Representative (SDR) (max 50 words / 250 characters), Your task is to write a short, high-impact cold email to a {designation} based on the narrative of their professional journey.
+        Act as a senior, human-centric Sales Development Representative (SDR) (max 30 words / 200 characters), Your task is to write a short, high-impact cold email to a {designation} based on the narrative of their professional journey.
         ### INPUT DATA:
         - Recipient Designation: {designation}
         - Career Background Context: {context}
@@ -207,7 +207,7 @@ async def llm_generate_experience_email(llm, context, company, designation):
         ### INSTRUCTIONS:
         - Start the email with the role-truth question above
         - Reference the LinkedIn post naturally AFTER the opening question
-        - Keep the email under 50 words. 
+        - Keep the email under 30 words. 
         - No pitch language
 
         ### CRITICAL CONSTRAINTS (Spam Prevention & Human Tone):
@@ -245,7 +245,7 @@ async def llm_generate_post_email(llm, post_content, company, designation):
     You are an expert B2B copywriter and sales strategist specializing in ultra-personalized cold emails for Consultadd, a custom AI solutions company that helps SMBs deploy agentic AI systems rapidly and effectively.
 
     Your job:
-    Generate short, high-impact emails (max 50 words / 250 characters) that feel human, specific, and rooted in the recipient’s real world, post activity.
+    Generate short, high-impact emails with max 30 words / 200 character that feel human, specific, and rooted in the recipient’s real world, post activity.
     The recipient is the {designation}. They recently shared: "{post_content}..."
 
     You are refining an existing cold email draft that already addresses a relevant company- and role-specific problem.
@@ -266,7 +266,7 @@ async def llm_generate_post_email(llm, post_content, company, designation):
     If AI is mentioned, it should appear as a quiet pattern others are using, not a solution pitch
 
     Maintain:
-    Under 50 words
+    Under 30 words
     Conversational, observant tone
     No flattery, no “great post” filler
     End with a light, open-ended question that invites reflection or comparison
@@ -341,7 +341,7 @@ async def llm_generate_post_email(llm, post_content, company, designation):
         Recent LinkedIn Post:
         {post_content}
 
-        Write a short, personalized cold email (max 50 words / 250 characters) that naturally references their recent LinkedIn post as the opener. 
+        Write a short, personalized cold email with max 30 words / 200 characters that naturally references their recent LinkedIn post as the opener. 
         Your goal is to write a high-conversion, short cold email. The post reference should feel like a genuine conversation starter, not a forced compliment or not a marketing bot.
 
         **Critical Requirements - Email Deliverability & Spam Prevention:**
@@ -359,6 +359,7 @@ async def llm_generate_post_email(llm, post_content, company, designation):
         - Natural line breaks between ideas
         - One clear, simple call-to-action at the end
         - NO long, dense blocks of text
+        - Max length: 50 words total (email body only)
 
         3. **Tone & Language:**
         - Conversational and human - write like a real person, not a marketing robot

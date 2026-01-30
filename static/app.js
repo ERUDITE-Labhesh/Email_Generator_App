@@ -63,7 +63,29 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const statusData = await statusResponse.json();
         console.log("Status:", statusData.status);
- 
+
+          if (statusData.status === "ERROR: INVALID_LINKEDIN_URL") {
+          clearInterval(pollInterval);
+          loader.classList.add("hidden");
+
+          alert("Invalid LinkedIn profile URL. Please check the link and try again.");
+
+          statusText.textContent = "";
+
+          if (isRegeneration) {
+              const regenerateBtn = document.querySelector("#emails-section button:last-child");
+              if (regenerateBtn) {
+                regenerateBtn.disabled = false;
+                regenerateBtn.textContent = "Regenerate Email";
+              }
+            } else {
+              generateBtn.disabled = false;
+              generateBtn.textContent = "Generate";
+            }
+
+            return;
+          }
+
           if (statusData.status === "ERROR: ACCOUNT_EXHAUSTED") {
           clearInterval(pollInterval);
           loader.classList.add("hidden");
@@ -107,12 +129,21 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
           renderEmails(statusData.result, analysisId, isRegeneration, designation, linkedinUrl);
-        }else if (statusData.status.startsWith("Error:")) { // General error handling
-                clearInterval(pollInterval);
-                loader.classList.add("hidden");
-                statusText.textContent = "An error occurred. See console.";
-                currentBtn.disabled = false;
-                currentBtn.textContent = isRegeneration ? "Regenerate Email" : "Generate";
+        }else if (statusData.status.startsWith("Error:")) {
+          clearInterval(pollInterval);
+          loader.classList.add("hidden");
+          statusText.textContent = "An error occurred. Please try again.";
+
+          if (isRegeneration) {
+            const regenerateBtn = document.querySelector("#emails-section button:last-child");
+            if (regenerateBtn) {
+              regenerateBtn.disabled = false;
+              regenerateBtn.textContent = "Regenerate Email";
+            }
+          } else {
+            generateBtn.disabled = false;
+            generateBtn.textContent = "Generate";
+          }
         }
       } catch (err) {
           console.error("Error polling task status:", err);

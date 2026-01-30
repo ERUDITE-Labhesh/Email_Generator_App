@@ -53,7 +53,10 @@ def start_email_generation():
 
         except Exception as e:
             error_msg = str(e)
-            if "INSUFFICIENT_CREDITS_ERROR" in error_msg or "402" in error_msg or "Insufficient credits" in error_msg:
+
+            if "INVALID_LINKEDIN_URL" in error_msg:
+                TASKS[task_id]["status"] = "ERROR: INVALID_LINKEDIN_URL"
+            elif "INSUFFICIENT_CREDITS_ERROR" in error_msg or "402" in error_msg or "Insufficient credits" in error_msg:
                 TASKS[task_id]["status"] = "ERROR: ACCOUNT_EXHAUSTED"
             else:
                 TASKS[task_id]["status"] = f"Error: {str(e)}"
@@ -102,7 +105,9 @@ def regenerate_email():
             TASKS[task_id]["status"] = "Completed"
         except Exception as e:
             error_msg = str(e)
-            if "INSUFFICIENT_CREDITS_ERROR" in error_msg or "402" in error_msg or "Insufficient credits" in error_msg:
+            if "INVALID_LINKEDIN_URL" in error_msg:
+                TASKS[task_id]["status"] = "ERROR: INVALID_LINKEDIN_URL"
+            elif "INSUFFICIENT_CREDITS_ERROR" in error_msg or "402" in error_msg or "Insufficient credits" in error_msg:
                 TASKS[task_id]["status"] = "ERROR: ACCOUNT_EXHAUSTED"
             else:
                 TASKS[task_id]["status"] = f"Error: {str(e)}"

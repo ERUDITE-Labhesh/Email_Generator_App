@@ -23,6 +23,41 @@ else:
 
 _thread_semaphore = asyncio.Semaphore(10)
 
+def is_valid_linkedin_profile_url(url: str) -> bool:
+    if not url:
+        return False
+
+    pattern = r"^https:\/\/(www\.)?linkedin\.com\/in\/[A-Za-z0-9\-_%]+\/?$"
+    return re.match(pattern, url) is not None
+
+def get_linkedin_data(url):
+    if not url:
+        return {"posts": [], "profile": {}}
+
+    if not is_valid_linkedin_profile_url(url):
+        raise ValueError("INVALID_LINKEDIN_URL")
+
+    try:
+        output_posts, output_profile = asyncio.run(async_main_extractor(url))
+
+        posts_empty = not output_posts or output_posts == "[]"
+        profile_empty = not output_profile or output_profile == "[]"
+
+        if posts_empty and profile_empty:
+            raise ValueError("INVALID_LINKEDIN_URL")
+
+        return {
+            "posts": json.loads(output_posts) if isinstance(output_posts, str) else output_posts,
+            "profile": json.loads(output_profile) if isinstance(output_profile, str) else output_profile,
+        }
+
+    except ValueError:
+        raise 
+
+    except Exception as e:
+        print(f"LinkedIn extraction failed: {e}")
+        raise RuntimeError("LINKEDIN_EXTRACTION_FAILED")
+
 def calculate_duration(start_year, end_year):
     if start_year is None: 
         return "N/A"
